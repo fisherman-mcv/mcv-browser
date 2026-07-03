@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: BrowserWindowController!
     private let engine = CommandEngine()
     private let mini = MiniMCVController()
+    private var onboarding: OnboardingWindowController?
 
     private var sessionFileURL: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mcv/session.json")
@@ -31,7 +32,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let restored = config.restoreSession ? loadSessionURLs() : []
-        windowController.start(homepage: config.homepage, restored: restored)
+        let launchBrowser: () -> Void = { [weak self] in
+            self?.windowController.start(homepage: ConfigStore.shared.config.homepage, restored: restored)
+        }
+
+        if config.hasCompletedOnboarding {
+            launchBrowser()
+        } else {
+            let onboarding = OnboardingWindowController()
+            onboarding.onFinish = launchBrowser
+            self.onboarding = onboarding
+            onboarding.present()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

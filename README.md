@@ -26,6 +26,7 @@ make build     # debug-збірка
 make run       # зібрати і запустити
 make release   # оптимізована збірка (нативний arm64 на M1/M2)
 make app       # зібрати MCV Browser.app для /Applications
+make dmg       # MCV-Browser.dmg — app + symlink на /Applications, drag-to-install
 ```
 
 ## Команди
@@ -92,6 +93,16 @@ make app       # зібрати MCV Browser.app для /Applications
 | ⇧⌘D (View) | Перемкнути тему |
 | ⌥⌘J | JavaScript on/off |
 
+## Онбординг першого запуску
+
+Поки `~/.mcv/config.json` не містить `hasCompletedOnboarding: true`, замість
+головного вікна показується плаваюча картка з 5 кроками (привітання, демо
+командного рядка з живим typewriter-ефектом, вибір теми, вибір режиму
+безпеки, підсумок) — амбієнтні градієнтні плями дрейфують на фоні, переходи
+між кроками анімовані (fade + slide + легкий overshoot), кнопка "Продовжити"
+світиться на hover. "Пропустити" в будь-який момент веде одразу в браузер.
+Щоб побачити знову: постав `"hasCompletedOnboarding": false` в конфізі.
+
 ## Liquid Glass
 
 Весь chrome (вікно, панель вкладок, командний рядок, палітра, перемикач вкладок,
@@ -142,12 +153,14 @@ Mini MCV, тости, бічні панелі) — суцільне скло: н
 ```
 mcv-browser/
 ├── Package.swift                  # SwiftPM (замінює CMakeLists)
-├── Makefile                       # build / run / release / app
+├── Makefile                       # build / run / release / app / dmg
+├── Scripts/make_dmg.sh            # пакування .app у drag-to-install DMG
 ├── Resources/Info.plist           # вшивається в бінарник (__info_plist)
 ├── config.example.json
 └── Sources/MCV/
     ├── main.swift                 # bootstrap NSApplication
-    ├── AppDelegate.swift          # меню, шорткати, глобальний хоткей, wiring
+    ├── AppDelegate.swift          # меню, шорткати, глобальний хоткей, wiring, онбординг
+    ├── Onboarding.swift           # флоу першого запуску (5 кроків, анімації)
     ├── Config.swift               # ~/.mcv/config.json, merge з дефолтами
     ├── CommandEngine.swift        # ядро команд (UI-агностичне, портоване)
     ├── TabManager.swift           # вкладки, WKWebView, делегати, favicon/audio-детекція

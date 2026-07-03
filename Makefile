@@ -1,4 +1,4 @@
-.PHONY: build run release app clean
+.PHONY: build run release app dmg clean
 
 build:
 	swift build
@@ -18,5 +18,8 @@ app: release
 	cp .build/release/MCV "MCV Browser.app/Contents/MacOS/MCV"
 	@echo "✓ MCV Browser.app готовий"
 
+dmg: app
+	bash Scripts/make_dmg.sh
+
 clean:
-	rm -rf .build "MCV Browser.app"
+	rm -rf .build "MCV Browser.app" MCV-Browser.dmg

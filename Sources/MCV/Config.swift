@@ -11,13 +11,15 @@ struct MCVConfig: Codable {
     var windowOpacity: Double
     var restoreSession: Bool
     var sidebarMode: Bool
+    var hasCompletedOnboarding: Bool
     var aliases: [String: String]
     var bookmarks: [String: String]
     var shortcuts: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case theme, mode, javascript, homepage, searchEngine, translateTarget,
-             windowOpacity, restoreSession, sidebarMode, aliases, bookmarks, shortcuts
+             windowOpacity, restoreSession, sidebarMode, hasCompletedOnboarding,
+             aliases, bookmarks, shortcuts
     }
 
     static let standard = MCVConfig(
@@ -30,6 +32,7 @@ struct MCVConfig: Codable {
         windowOpacity: 1.0,
         restoreSession: true,
         sidebarMode: false,
+        hasCompletedOnboarding: false,
         aliases: [
             "hn": "open news.ycombinator.com",
         ],
@@ -62,6 +65,7 @@ extension MCVConfig {
         windowOpacity = (try? c.decode(Double.self, forKey: .windowOpacity)) ?? d.windowOpacity
         restoreSession = (try? c.decode(Bool.self, forKey: .restoreSession)) ?? d.restoreSession
         sidebarMode = (try? c.decode(Bool.self, forKey: .sidebarMode)) ?? d.sidebarMode
+        hasCompletedOnboarding = (try? c.decode(Bool.self, forKey: .hasCompletedOnboarding)) ?? d.hasCompletedOnboarding
         aliases = (try? c.decode([String: String].self, forKey: .aliases)) ?? d.aliases
         bookmarks = (try? c.decode([String: String].self, forKey: .bookmarks)) ?? d.bookmarks
         var merged = d.shortcuts

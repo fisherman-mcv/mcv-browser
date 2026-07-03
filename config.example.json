@@ -8,6 +8,7 @@
   "windowOpacity": 1.0,
   "restoreSession": true,
   "sidebarMode": false,
+  "hasCompletedOnboarding": true,
   "aliases": {
     "gh": "open github.com",
     "hn": "open news.ycombinator.com",
