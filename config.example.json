@@ -1,0 +1,27 @@
+{
+  "theme": "dark",
+  "mode": "safe",
+  "javascript": true,
+  "homepage": "https://duckduckgo.com",
+  "searchEngine": "ddg",
+  "translateTarget": "uk",
+  "windowOpacity": 1.0,
+  "restoreSession": true,
+  "sidebarMode": false,
+  "aliases": {
+    "gh": "open github.com",
+    "hn": "open news.ycombinator.com",
+    "so": "g site:stackoverflow.com",
+    "docs": "open developer.apple.com/documentation"
+  },
+  "shortcuts": {
+    "commandPalette": "cmd+e",
+    "tabSwitcher": "cmd+p",
+    "minimalMode": "cmd+m",
+    "newTab": "cmd+t",
+    "closeTab": "cmd+w",
+    "reload": "cmd+r",
+    "focusAddress": "cmd+l",
+    "miniMCV": "alt+space"
+  }
+}
