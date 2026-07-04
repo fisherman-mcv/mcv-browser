@@ -51,7 +51,12 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         window.backgroundColor = .clear
         window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
-        window.center()
+        // Розмір/позиція зберігаються між запусками (стандартний AppKit-механізм,
+        // окремий запис у defaults на кожну назву); без збереженого кадру — центр.
+        if !window.setFrameUsingName("MCVMainWindow") {
+            window.center()
+        }
+        window.setFrameAutosaveName("MCVMainWindow")
         buildUI()
         wireTabManager()
         wireSecurity()

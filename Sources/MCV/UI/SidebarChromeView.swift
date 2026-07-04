@@ -20,12 +20,13 @@ final class SidebarTabIconView: NSView {
     var onDuplicate: (() -> Void)?
 
     private let iconView = NSImageView()
-    private let activeBar = NSView()
     private let statusBadge = NSTextField(labelWithString: "")
     private let pinBadge = NSTextField(labelWithString: "📌")
     private var trackingArea: NSTrackingArea?
 
-    static let size: CGFloat = 36
+    /// Трохи більше за самі traffic-light-кружечки (12px), не повний розмір
+    /// класичного фавікона — панель має лишатись вузькою.
+    static let size: CGFloat = 22
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -36,47 +37,35 @@ final class SidebarTabIconView: NSView {
             heightAnchor.constraint(equalToConstant: Self.size),
         ])
 
-        activeBar.wantsLayer = true
-        activeBar.layer?.cornerRadius = 1.5
-        activeBar.layer?.backgroundColor = Theme.accent.cgColor
-        activeBar.translatesAutoresizingMaskIntoConstraints = false
-        activeBar.isHidden = true
-
         iconView.imageScaling = .scaleProportionallyDown
         iconView.wantsLayer = true
-        iconView.layer?.cornerRadius = 6
+        iconView.layer?.cornerRadius = 4
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        statusBadge.font = .systemFont(ofSize: 10)
+        statusBadge.font = .systemFont(ofSize: 7)
         statusBadge.isHidden = true
         statusBadge.translatesAutoresizingMaskIntoConstraints = false
         statusBadge.wantsLayer = true
         statusBadge.drawsBackground = false
 
-        pinBadge.font = .systemFont(ofSize: 9)
+        pinBadge.font = .systemFont(ofSize: 6)
         pinBadge.isHidden = true
         pinBadge.translatesAutoresizingMaskIntoConstraints = false
 
-        addSubview(activeBar)
         addSubview(iconView)
         addSubview(statusBadge)
         addSubview(pinBadge)
         NSLayoutConstraint.activate([
-            activeBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -6),
-            activeBar.centerYAnchor.constraint(equalTo: centerYAnchor),
-            activeBar.widthAnchor.constraint(equalToConstant: 3),
-            activeBar.heightAnchor.constraint(equalToConstant: 18),
+            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
+            iconView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            iconView.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            iconView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
 
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 3),
-            iconView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -3),
-            iconView.topAnchor.constraint(equalTo: topAnchor, constant: 3),
-            iconView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
+            statusBadge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 1),
+            statusBadge.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 1),
 
-            statusBadge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 2),
-            statusBadge.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 2),
-
-            pinBadge.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -2),
-            pinBadge.topAnchor.constraint(equalTo: topAnchor, constant: -2),
+            pinBadge.leadingAnchor.constraint(equalTo: leadingAnchor),
+            pinBadge.topAnchor.constraint(equalTo: topAnchor),
         ])
 
         let click = NSClickGestureRecognizer(target: self, action: #selector(tapped))
@@ -91,17 +80,16 @@ final class SidebarTabIconView: NSView {
             iconView.image = favicon
             iconView.contentTintColor = nil
         } else {
-            let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+            let config = NSImage.SymbolConfiguration(pointSize: 10, weight: .regular)
             iconView.image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)?
                 .withSymbolConfiguration(config)
             iconView.contentTintColor = Theme.textSecondary
         }
 
-        activeBar.isHidden = !model.isActive
         layer?.backgroundColor = model.isActive
-            ? NSColor.white.withAlphaComponent(Theme.isDark ? 0.12 : 0.5).cgColor
+            ? NSColor.white.withAlphaComponent(Theme.isDark ? 0.16 : 0.55).cgColor
             : NSColor.clear.cgColor
-        layer?.cornerRadius = 8
+        layer?.cornerRadius = 6
 
         pinBadge.isHidden = !model.isPinned
 
@@ -215,11 +203,12 @@ private final class TrafficLightButton: NSButton {
     override func mouseExited(with event: NSEvent) { glyphLabel.animator().alphaValue = 0 }
 }
 
-/// Тонка вертикальна скляна панель (48–56px): traffic lights зверху,
-/// нижче — стовпчик фавіконок, "+" внизу.
+/// Тонка вертикальна панель (36px): traffic lights зверху, нижче —
+/// стовпчик фавіконок, "+" внизу. Той самий матеріал/без рамки, що й
+/// фон вікна — панель зливається в одну поверхню замість окремої картки.
 final class SidebarChromeView: NSView {
-    static let width: CGFloat = 52
-    static let trafficLightsReservedHeight: CGFloat = 84
+    static let width: CGFloat = 36
+    static let trafficLightsReservedHeight: CGFloat = 60
 
     var onSelectTab: ((Int) -> Void)?
     var onCloseTab: ((Int) -> Void)?
@@ -227,7 +216,7 @@ final class SidebarChromeView: NSView {
     var onDuplicateTab: ((Int) -> Void)?
     var onNewTab: (() -> Void)?
 
-    private let glass = CardSurface(cornerRadius: 0)
+    private let effect = NSVisualEffectView()
     private let scroll = NSScrollView()
     private let stack = FlippedStackView()
     private let addButton = NSButton()
@@ -240,13 +229,18 @@ final class SidebarChromeView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
         widthAnchor.constraint(equalToConstant: Self.width).isActive = true
 
-        glass.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(glass)
+        // Той самий .sidebar material, що й база вікна (BrowserWindowController) —
+        // без рамки/тіні, тож панель виглядає продовженням вікна, не окремою карткою.
+        effect.material = .sidebar
+        effect.blendingMode = .withinWindow
+        effect.state = .active
+        effect.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(effect)
         NSLayoutConstraint.activate([
-            glass.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glass.trailingAnchor.constraint(equalTo: trailingAnchor),
-            glass.topAnchor.constraint(equalTo: topAnchor),
-            glass.bottomAnchor.constraint(equalTo: bottomAnchor),
+            effect.leadingAnchor.constraint(equalTo: leadingAnchor),
+            effect.trailingAnchor.constraint(equalTo: trailingAnchor),
+            effect.topAnchor.constraint(equalTo: topAnchor),
+            effect.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
 
         stack.orientation = .vertical
@@ -262,7 +256,7 @@ final class SidebarChromeView: NSView {
         scroll.horizontalScrollElasticity = .none
         scroll.translatesAutoresizingMaskIntoConstraints = false
 
-        let plusConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        let plusConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
         addButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Нова вкладка")?
             .withSymbolConfiguration(plusConfig)
         addButton.image?.isTemplate = true
@@ -279,26 +273,26 @@ final class SidebarChromeView: NSView {
         trafficLights.spacing = 8
         trafficLights.translatesAutoresizingMaskIntoConstraints = false
 
-        glass.contentHost.addSubview(trafficLights)
-        glass.contentHost.addSubview(scroll)
-        glass.contentHost.addSubview(addButton)
+        effect.addSubview(trafficLights)
+        effect.addSubview(scroll)
+        effect.addSubview(addButton)
         NSLayoutConstraint.activate([
-            trafficLights.centerXAnchor.constraint(equalTo: glass.contentHost.centerXAnchor),
-            trafficLights.topAnchor.constraint(equalTo: glass.contentHost.topAnchor, constant: 20),
+            trafficLights.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
+            trafficLights.topAnchor.constraint(equalTo: effect.topAnchor, constant: 14),
 
-            scroll.leadingAnchor.constraint(equalTo: glass.contentHost.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: glass.contentHost.trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: glass.contentHost.topAnchor, constant: Self.trafficLightsReservedHeight),
-            scroll.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.sm),
+            scroll.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: effect.topAnchor, constant: Self.trafficLightsReservedHeight),
+            scroll.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.xs),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.contentView.topAnchor, constant: Theme.Spacing.sm),
+            stack.topAnchor.constraint(equalTo: scroll.contentView.topAnchor, constant: Theme.Spacing.xs),
             stack.widthAnchor.constraint(equalTo: scroll.widthAnchor),
 
-            addButton.centerXAnchor.constraint(equalTo: glass.contentHost.centerXAnchor),
-            addButton.bottomAnchor.constraint(equalTo: glass.contentHost.bottomAnchor, constant: -Theme.Spacing.lg),
-            addButton.widthAnchor.constraint(equalToConstant: 28),
-            addButton.heightAnchor.constraint(equalToConstant: 28),
+            addButton.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
+            addButton.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -Theme.Spacing.sm),
+            addButton.widthAnchor.constraint(equalToConstant: 20),
+            addButton.heightAnchor.constraint(equalToConstant: 20),
         ])
     }
 
