@@ -71,15 +71,30 @@ private final class DownloadRow: NSView {
     }
 }
 
-/// Бічна панель завантажень (320px, праворуч) — з макета §7.
-final class DownloadsSidebarView: CardSurface {
+/// Бічна панель завантажень (320px, праворуч) — той самий "докований,
+/// без рамки" підхід, що й лівий SidebarChromeView: обидві прилягають до
+/// краю вікна впритул, тож мають виглядати однією поверхнею, не карткою.
+final class DownloadsSidebarView: NSView {
+    private let effect = NSVisualEffectView()
     private let titleLabel = NSTextField(labelWithString: "Завантаження")
     private let stack = NSStackView()
     private let clearButton = NSButton(title: "Очистити", target: nil, action: nil)
     private let emptyLabel = NSTextField(labelWithString: "Поки що порожньо")
 
     init() {
-        super.init(cornerRadius: 0, shadow: false)
+        super.init(frame: .zero)
+
+        effect.material = .sidebar
+        effect.blendingMode = .behindWindow
+        effect.state = .active
+        effect.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(effect)
+        NSLayoutConstraint.activate([
+            effect.leadingAnchor.constraint(equalTo: leadingAnchor),
+            effect.trailingAnchor.constraint(equalTo: trailingAnchor),
+            effect.topAnchor.constraint(equalTo: topAnchor),
+            effect.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
 
         titleLabel.font = Theme.Typo.h2
         titleLabel.textColor = Theme.textPrimary
@@ -100,29 +115,31 @@ final class DownloadsSidebarView: CardSurface {
         clearButton.action = #selector(clearTapped)
         clearButton.translatesAutoresizingMaskIntoConstraints = false
 
-        contentHost.addSubview(titleLabel)
-        contentHost.addSubview(stack)
-        contentHost.addSubview(clearButton)
+        effect.addSubview(titleLabel)
+        effect.addSubview(stack)
+        effect.addSubview(clearButton)
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: contentHost.leadingAnchor, constant: Theme.Spacing.lg),
-            titleLabel.topAnchor.constraint(equalTo: contentHost.topAnchor, constant: Theme.Spacing.lg),
+            titleLabel.leadingAnchor.constraint(equalTo: effect.leadingAnchor, constant: Theme.Spacing.lg),
+            titleLabel.topAnchor.constraint(equalTo: effect.topAnchor, constant: Theme.Spacing.lg),
 
-            stack.leadingAnchor.constraint(equalTo: contentHost.leadingAnchor, constant: Theme.Spacing.lg),
-            stack.trailingAnchor.constraint(equalTo: contentHost.trailingAnchor, constant: -Theme.Spacing.lg),
+            stack.leadingAnchor.constraint(equalTo: effect.leadingAnchor, constant: Theme.Spacing.lg),
+            stack.trailingAnchor.constraint(equalTo: effect.trailingAnchor, constant: -Theme.Spacing.lg),
             stack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Theme.Spacing.lg),
 
-            clearButton.leadingAnchor.constraint(equalTo: contentHost.leadingAnchor, constant: Theme.Spacing.lg),
-            clearButton.bottomAnchor.constraint(equalTo: contentHost.bottomAnchor, constant: -Theme.Spacing.lg),
+            clearButton.leadingAnchor.constraint(equalTo: effect.leadingAnchor, constant: Theme.Spacing.lg),
+            clearButton.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -Theme.Spacing.lg),
         ])
 
         DownloadsCenter.shared.onChange = { [weak self] in self?.reload() }
+        NotificationCenter.default.addObserver(self, selector: #selector(applyStyle),
+                                                name: .mcvThemeChanged, object: nil)
         reload()
     }
 
     required init?(coder: NSCoder) { fatalError("not supported") }
+    deinit { NotificationCenter.default.removeObserver(self) }
 
-    override func applyStyle() {
-        super.applyStyle()
+    @objc private func applyStyle() {
         titleLabel.textColor = Theme.textPrimary
         emptyLabel.textColor = Theme.textSecondary
         clearButton.contentTintColor = Theme.textSecondary

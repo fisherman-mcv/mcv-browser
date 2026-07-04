@@ -208,7 +208,7 @@ private final class TrafficLightButton: NSButton {
 /// фон вікна — панель зливається в одну поверхню замість окремої картки.
 final class SidebarChromeView: NSView {
     static let width: CGFloat = 36
-    static let trafficLightsReservedHeight: CGFloat = 60
+    static let trafficLightsReservedHeight: CGFloat = 78
 
     var onSelectTab: ((Int) -> Void)?
     var onCloseTab: ((Int) -> Void)?
@@ -232,7 +232,7 @@ final class SidebarChromeView: NSView {
         // Той самий .sidebar material, що й база вікна (BrowserWindowController) —
         // без рамки/тіні, тож панель виглядає продовженням вікна, не окремою карткою.
         effect.material = .sidebar
-        effect.blendingMode = .withinWindow
+        effect.blendingMode = .behindWindow
         effect.state = .active
         effect.translatesAutoresizingMaskIntoConstraints = false
         addSubview(effect)

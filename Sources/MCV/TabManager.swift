@@ -68,14 +68,30 @@ final class BrowserTab: NSObject {
         webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.scriptHandlerName)
     }
 
+    /// Обирає найбільшу задекларовану іконку (apple-touch-icon майже завжди
+    /// значно якісніший за 16×16 favicon.ico), а не перший-ліпший тег.
+    private static let faviconPickerJS = """
+    (() => {
+      const links = Array.from(document.querySelectorAll(
+        "link[rel~='icon'], link[rel='apple-touch-icon'], link[rel='apple-touch-icon-precomposed']"
+      ));
+      function size(l) {
+        const attr = l.getAttribute('sizes');
+        if (!attr) return l.rel.includes('apple-touch-icon') ? 180 : 32;
+        const m = attr.match(/(\\d+)x(\\d+)/i);
+        return m ? parseInt(m[1], 10) : 32;
+      }
+      let best = null, bestSize = 0;
+      for (const l of links) {
+        const s = size(l);
+        if (s > bestSize) { bestSize = s; best = l; }
+      }
+      return best ? best.href : (location.origin + '/favicon.ico');
+    })();
+    """
+
     private func fetchFavicon() {
-        let js = """
-        (() => {
-          const l = document.querySelector("link[rel~='icon']");
-          return l ? l.href : (location.origin + '/favicon.ico');
-        })();
-        """
-        webView.evaluateJavaScript(js) { [weak self] result, _ in
+        webView.evaluateJavaScript(Self.faviconPickerJS) { [weak self] result, _ in
             guard let self, let href = result as? String, let url = URL(string: href) else { return }
             URLSession.shared.dataTask(with: url) { data, _, _ in
                 guard let data, let image = NSImage(data: data) else { return }

@@ -1,8 +1,9 @@
 import AppKit
 
 /// Базова скляна поверхня: справжній Liquid Glass (NSGlassEffectView) на
-/// macOS 26+, фолбек на NSVisualEffectView для старших систем — плюс тонка
-/// обвідка й опційна тінь поверх, керовані дизайн-токенами з Theme.
+/// macOS 26+, фолбек на NSVisualEffectView для старших систем. Без статичної
+/// рамки — вона зайва навколо суцільного скла; рамка з'являється лише
+/// тимчасово, як індикатор фокусу (див. `setFocused`), а не як прикраса.
 /// Контент додається у `contentHost`; стиль сам оновлюється на зміну теми.
 class CardSurface: NSView {
     let contentHost = NSView()
@@ -52,11 +53,11 @@ class CardSurface: NSView {
             pin(contentHost, to: backgroundContainer)
         }
 
-        // Тонка обвідка поверх скла — окремий шар, не залежить від реалізації
-        // блюру вище, інакше межі капсули губляться на світлому контенті.
+        // Рамка-індикатор фокусу — невидима (width 0), доки не викликано
+        // setFocused(true). Ніякої статичної обвідки навколо скла.
         outline.wantsLayer = true
         outline.layer?.cornerRadius = cornerRadius
-        outline.layer?.borderWidth = 1
+        outline.layer?.borderWidth = 0
         outline.translatesAutoresizingMaskIntoConstraints = false
         addSubview(outline)
         pin(outline, to: self)
@@ -70,7 +71,6 @@ class CardSurface: NSView {
     deinit { NotificationCenter.default.removeObserver(self) }
 
     @objc func applyStyle() {
-        outline.layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
         if hasShadow {
             layer?.shadowColor = NSColor.black.cgColor
             layer?.shadowOpacity = 0.4
@@ -80,14 +80,13 @@ class CardSurface: NSView {
         }
     }
 
-    /// Рамка стає акцентною при фокусі командного рядка (0.15s).
+    /// Рамка з'являється лише як тимчасовий індикатор фокусу командного
+    /// рядка (0.15s), не як стала прикраса.
     func setFocused(_ focused: Bool) {
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = Theme.Motion.hover
-            outline.layer?.borderColor = (focused
-                ? Theme.accent
-                : NSColor.white.withAlphaComponent(0.18)).cgColor
-            outline.layer?.borderWidth = focused ? 1.5 : 1
+            outline.layer?.borderColor = Theme.accent.cgColor
+            outline.layer?.borderWidth = focused ? 1.5 : 0
         }
     }
 
