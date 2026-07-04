@@ -76,6 +76,7 @@ private final class DownloadRow: NSView {
 /// краю вікна впритул, тож мають виглядати однією поверхнею, не карткою.
 final class DownloadsSidebarView: NSView {
     private let effect = NSVisualEffectView()
+    private let tint = NSView()
     private let titleLabel = NSTextField(labelWithString: "Завантаження")
     private let stack = NSStackView()
     private let clearButton = NSButton(title: "Очистити", target: nil, action: nil)
@@ -94,6 +95,19 @@ final class DownloadsSidebarView: NSView {
             effect.trailingAnchor.constraint(equalTo: trailingAnchor),
             effect.topAnchor.constraint(equalTo: topAnchor),
             effect.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+
+        // Той самий нейтралізуючий скрим, що й у лівому sidebar — інакше
+        // синюватий відтінок робочого столу конфліктує з чорною сторінкою.
+        tint.wantsLayer = true
+        tint.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.38).cgColor
+        tint.translatesAutoresizingMaskIntoConstraints = false
+        effect.addSubview(tint)
+        NSLayoutConstraint.activate([
+            tint.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
+            tint.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
+            tint.topAnchor.constraint(equalTo: effect.topAnchor),
+            tint.bottomAnchor.constraint(equalTo: effect.bottomAnchor),
         ])
 
         titleLabel.font = Theme.Typo.h2

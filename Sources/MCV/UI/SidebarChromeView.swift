@@ -217,6 +217,7 @@ final class SidebarChromeView: NSView {
     var onNewTab: (() -> Void)?
 
     private let effect = NSVisualEffectView()
+    private let tint = NSView()
     private let scroll = NSScrollView()
     private let stack = FlippedStackView()
     private let addButton = NSButton()
@@ -241,6 +242,21 @@ final class SidebarChromeView: NSView {
             effect.trailingAnchor.constraint(equalTo: trailingAnchor),
             effect.topAnchor.constraint(equalTo: topAnchor),
             effect.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+
+        // .behindWindow тягне колір робочого столу крізь блюр (часто синюватий) —
+        // сторінка поруч непрозоро-чорна, тож без нейтралізації виходить видимий
+        // шов. Темний скрим (підшар усередині effect, під іконками) гасить
+        // відтінок, лишаючи саму лише прозорість/блюр.
+        tint.wantsLayer = true
+        tint.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.38).cgColor
+        tint.translatesAutoresizingMaskIntoConstraints = false
+        effect.addSubview(tint)
+        NSLayoutConstraint.activate([
+            tint.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
+            tint.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
+            tint.topAnchor.constraint(equalTo: effect.topAnchor),
+            tint.bottomAnchor.constraint(equalTo: effect.bottomAnchor),
         ])
 
         stack.orientation = .vertical

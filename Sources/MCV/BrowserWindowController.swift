@@ -357,7 +357,9 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         webView.translatesAutoresizingMaskIntoConstraints = false
         webContainer.addSubview(webView)
         NSLayoutConstraint.activate([
-            webView.leadingAnchor.constraint(equalTo: webContainer.leadingAnchor, constant: 8),
+            // 12px — той самий відступ, що й у traffic lights від лівого краю
+            // sidebar'а ((36-12)/2), для гармонійного ритму по горизонталі.
+            webView.leadingAnchor.constraint(equalTo: webContainer.leadingAnchor, constant: 12),
             webView.trailingAnchor.constraint(equalTo: webContainer.trailingAnchor, constant: -8),
             webView.topAnchor.constraint(equalTo: webContainer.topAnchor),
             webView.bottomAnchor.constraint(equalTo: webContainer.bottomAnchor, constant: -8),
@@ -532,11 +534,12 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         webLeadingToContent.isActive = hideSidebar
         webLeadingToSidebarChrome.isActive = !hideSidebar
 
-        // Реальні traffic lights ховаються на користь власних (вертикальних)
-        // у sidebarChrome — репозиціонування системних кнопок AppKit щоразу
-        // синхронно скидає назад, тож надійніше просто перемкнути видимість.
+        // Реальні traffic lights показуються лише в класичному режимі (без
+        // sidebar і без minimal) — у sidebar-режимі їх заміняють власні
+        // вертикальні, а в minimal ховається геть усе chrome, включно з ними.
+        let showRealTrafficLights = !sidebarMode && !minimalMode
         for type: NSWindow.ButtonType in [.closeButton, .miniaturizeButton, .zoomButton] {
-            window.standardWindowButton(type)?.isHidden = !hideSidebar
+            window.standardWindowButton(type)?.isHidden = !showRealTrafficLights
         }
     }
 
