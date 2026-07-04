@@ -13,8 +13,9 @@ release:
 # Збирає повноцінний MCV Browser.app для перетягування в /Applications
 app: release
 	rm -rf "MCV Browser.app"
-	mkdir -p "MCV Browser.app/Contents/MacOS"
+	mkdir -p "MCV Browser.app/Contents/MacOS" "MCV Browser.app/Contents/Resources"
 	cp Resources/Info.plist "MCV Browser.app/Contents/Info.plist"
+	cp Resources/AppIcon.icns "MCV Browser.app/Contents/Resources/AppIcon.icns"
 	cp .build/release/MCV "MCV Browser.app/Contents/MacOS/MCV"
 	@echo "✓ MCV Browser.app готовий"
 
