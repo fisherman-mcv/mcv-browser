@@ -315,7 +315,9 @@ make app
 codesign --verify --deep --strict "MCV Browser.app"
 ```
 
-Some integration tests require downloaded extensions or macOS UI services and are skipped by default. A skipped external fixture is not a pass.
+Some integration tests require downloaded extensions or an interactive macOS
+WindowServer and are run locally. Hosted CI executes deterministic runtime tests
+plus debug/release builds. A skipped external fixture is not a pass.
 
 ## Status
 

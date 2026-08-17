@@ -13,11 +13,13 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Debug build
         run: swift build
-      - name: Tests
-        run: swift test --skip SmartPopupTests
+      - name: Deterministic runtime tests
+        # Hosted runners have no reliable interactive WindowServer; WKWebView
+        # behavior suites are exercised on a logged-in macOS session locally.
+        run: swift test --filter ExtensionRuntimeTests
       - name: Release app
         run: make app
       - name: Verify bundle signature
