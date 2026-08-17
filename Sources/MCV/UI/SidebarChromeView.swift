@@ -356,6 +356,7 @@ final class SidebarChromeView: NSView {
     private let closeDot = TrafficLightButton(dotColor: NSColor(hex: "#FF5F57"), glyph: "×")
     private let minimizeDot = TrafficLightButton(dotColor: NSColor(hex: "#FEBC2E"), glyph: "−")
     private let zoomDot = TrafficLightButton(dotColor: NSColor(hex: "#28C840"), glyph: "+")
+    private var lastSnapshot: [String] = []
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -488,6 +489,16 @@ final class SidebarChromeView: NSView {
     }
 
     func reload(_ models: [SidebarTabModel]) {
+        let snapshot = models.map { model in
+            let imageID = model.favicon.map { String(ObjectIdentifier($0).hashValue) } ?? "-"
+            return [String(model.tabIndex), imageID, model.isActive ? "1" : "0",
+                    model.isLoading ? "1" : "0", model.isPinned ? "1" : "0",
+                    model.isPlayingAudio ? "1" : "0", model.hasUnread ? "1" : "0",
+                    model.groupID?.uuidString ?? "-", model.groupTitle ?? "-",
+                    String(model.groupCount), model.isGroup ? "1" : "0"].joined(separator: ":")
+        }
+        guard snapshot != lastSnapshot else { return }
+        lastSnapshot = snapshot
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for model in models {
             let icon = SidebarTabIconView()

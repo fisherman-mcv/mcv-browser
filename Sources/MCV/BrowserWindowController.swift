@@ -510,9 +510,10 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     }
 
     private func attachCurrentWebView() {
-        webContainer.subviews.forEach { $0.removeFromSuperview() }
         guard let current = tabManager.current else { return }
         guard current.logicalURL != nil else {
+            if blankNewTabView.superview === webContainer { return }
+            webContainer.subviews.forEach { $0.removeFromSuperview() }
             // The desktop-colored .behindWindow material lives below baseTint.
             // Lowering only that tint makes the native tab genuinely
             // translucent instead of merely painting another dark shade.
@@ -528,6 +529,8 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             ])
             return
         }
+        if current.webView.superview === webContainer { return }
+        webContainer.subviews.forEach { $0.removeFromSuperview() }
         showingNativeBlank = false
         updateBaseTint()
         if current === pictureInPictureTab { stopPictureInPicture(for: current, reattach: false) }

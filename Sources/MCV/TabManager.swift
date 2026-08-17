@@ -1,5 +1,6 @@
 import AppKit
 import WebKit
+import ImageIO
 
 private struct PageDownloadContext {
     let link: URL?
@@ -75,6 +76,14 @@ final class BrowserTab: NSObject {
     private static let scriptHandlerName = "mcvAudio"
     private static let pictureInPictureHandlerName = "mcvPictureInPicture"
     private static let contextMenuHandlerName = "mcvContextMenu"
+    private static let faviconCache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 128
+        cache.totalCostLimit = 8 * 1024 * 1024
+        return cache
+    }()
+
+    static func purgeVolatileCaches() { faviconCache.removeAllObjects() }
 
     var displayTitle: String {
         let base: String
@@ -202,8 +211,22 @@ final class BrowserTab: NSObject {
     private func fetchFavicon() {
         webView.evaluateJavaScript(Self.faviconPickerJS) { [weak self] result, _ in
             guard let self, let href = result as? String, let url = URL(string: href) else { return }
+            let key = url.absoluteString as NSString
+            if let cached = Self.faviconCache.object(forKey: key) {
+                self.favicon = cached
+                self.onUpdate?()
+                return
+            }
             URLSession.shared.dataTask(with: url) { data, _, _ in
-                guard let data, let image = NSImage(data: data) else { return }
+                guard let data, data.count <= 2 * 1024 * 1024,
+                      let source = CGImageSourceCreateWithData(data as CFData, nil),
+                      let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                        kCGImageSourceCreateThumbnailFromImageAlways: true,
+                        kCGImageSourceThumbnailMaxPixelSize: 64,
+                        kCGImageSourceCreateThumbnailWithTransform: true,
+                      ] as CFDictionary) else { return }
+                let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+                Self.faviconCache.setObject(image, forKey: key, cost: cgImage.bytesPerRow * cgImage.height)
                 DispatchQueue.main.async {
                     self.favicon = image
                     self.onUpdate?()
@@ -489,6 +512,7 @@ final class TabManager {
     private let groupsFileURL: URL
     private var pinnedPersistenceWorkItem: DispatchWorkItem?
     private var lastPinnedData: Data?
+    private var contentChangeScheduled = false
 
     init(pinnedFileURL: URL? = nil, groupsFileURL: URL? = nil) {
         let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
@@ -543,7 +567,7 @@ final class TabManager {
         let tab = BrowserTab(configuration: configuration, isPrivate: ephemeral)
         tab.isPinned = pinned
         tab.onUpdate = { [weak self, weak tab] in
-            self?.onContentChange?()
+            self?.scheduleContentChange()
             if tab?.isPinned == true { self?.schedulePinnedPersistence() }
         }
         tab.onRequestNewTab = { [weak self] url in self?.newTab(url: url) }
@@ -557,7 +581,7 @@ final class TabManager {
         tab.onBackgroundActivity = { [weak self, weak tab] in
             guard let self, let tab, tab !== self.current else { return }
             tab.hasUnreadActivity = true
-            self.onContentChange?()
+            self.scheduleContentChange()
         }
         tab.onPageReady = { [weak self] tab in self?.onPageReady?(tab) }
         if pinned {
@@ -575,6 +599,18 @@ final class TabManager {
         MCVExtensionRuntime.shared.tabEvent("onCreated", payload: ["id": currentIndex, "index": currentIndex, "active": true, "url": url?.absoluteString ?? ""])
         MCVExtensionRuntime.shared.tabEvent("onActivated", payload: ["tabId": currentIndex, "windowId": 1])
         return tab
+    }
+
+    /// KVO emits title, URL and loading changes in bursts during one navigation.
+    /// Collapse them into one UI pass on the next main-runloop turn.
+    private func scheduleContentChange() {
+        guard !contentChangeScheduled else { return }
+        contentChangeScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.contentChangeScheduled = false
+            self.onContentChange?()
+        }
     }
 
     func togglePinCurrent() {

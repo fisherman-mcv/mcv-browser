@@ -56,6 +56,8 @@ final class ResourcePressureController {
     }
 
     private func evictVolatileWebCache() {
+        BrowserTab.purgeVolatileCaches()
+        URLCache.shared.removeAllCachedResponses()
         let store = WKWebsiteDataStore.default()
         store.fetchDataRecords(ofTypes: [WKWebsiteDataTypeMemoryCache]) { records in
             store.removeData(ofTypes: [WKWebsiteDataTypeMemoryCache], for: records) {}

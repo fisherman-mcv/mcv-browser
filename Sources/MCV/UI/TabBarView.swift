@@ -143,6 +143,7 @@ final class TabBarView: NSView {
     private let scroll = NSScrollView()
     private let stack = NSStackView()
     private let newButton = NSButton()
+    private var lastSnapshot: [String] = []
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -196,6 +197,11 @@ final class TabBarView: NSView {
     required init?(coder: NSCoder) { fatalError("not supported") }
 
     func reload(items: [(title: String, loading: Bool)], current: Int) {
+        let snapshot = items.enumerated().map {
+            "\($0.offset):\($0.element.title):\($0.element.loading ? 1 : 0):\($0.offset == current ? 1 : 0)"
+        }
+        guard snapshot != lastSnapshot else { return }
+        lastSnapshot = snapshot
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (index, item) in items.enumerated() {
             let chip = TabChipView()
