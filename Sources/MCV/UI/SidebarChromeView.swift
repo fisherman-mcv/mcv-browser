@@ -36,6 +36,7 @@ final class SidebarTabIconView: NSView {
     private let statusBadge = NSTextField(labelWithString: "")
     private let pinBadge = NSTextField(labelWithString: "📌")
     private let miniFavicon = NSImageView()
+    private let closeButton = NSButton()
     private var trackingArea: NSTrackingArea?
     private var isGroup = false
     private var model: SidebarTabModel?
@@ -72,6 +73,21 @@ final class SidebarTabIconView: NSView {
         addSubview(statusBadge)
         addSubview(pinBadge)
         addSubview(miniFavicon)
+
+        let closeConfig = NSImage.SymbolConfiguration(pointSize: 9, weight: .bold)
+        closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Close Tab")?
+            .withSymbolConfiguration(closeConfig)
+        closeButton.image?.isTemplate = true
+        closeButton.contentTintColor = Theme.textPrimary
+        closeButton.isBordered = false
+        closeButton.title = ""
+        closeButton.target = self
+        closeButton.action = #selector(closeTapped)
+        closeButton.toolTip = "Close Tab"
+        closeButton.alphaValue = 0
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(closeButton)
+
         miniFavicon.imageScaling = .scaleProportionallyDown
         miniFavicon.wantsLayer = true
         miniFavicon.layer?.cornerRadius = 2
@@ -91,6 +107,10 @@ final class SidebarTabIconView: NSView {
             miniFavicon.bottomAnchor.constraint(equalTo: bottomAnchor),
             miniFavicon.widthAnchor.constraint(equalToConstant: 9),
             miniFavicon.heightAnchor.constraint(equalToConstant: 9),
+            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 2),
+            closeButton.topAnchor.constraint(equalTo: topAnchor, constant: -2),
+            closeButton.widthAnchor.constraint(equalToConstant: 13),
+            closeButton.heightAnchor.constraint(equalToConstant: 13),
         ])
 
         let click = NSClickGestureRecognizer(target: self, action: #selector(tapped))
@@ -128,6 +148,8 @@ final class SidebarTabIconView: NSView {
         layer?.cornerRadius = 6
 
         pinBadge.isHidden = model.isGroup || !model.isPinned
+        closeButton.isHidden = model.isGroup || model.isPinned
+        closeButton.alphaValue = 0
 
         if model.isGroup {
             statusBadge.stringValue = "\(model.groupCount)"
@@ -162,6 +184,7 @@ final class SidebarTabIconView: NSView {
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = Theme.Motion.hover
             animator().alphaValue = 0.85
+            if !closeButton.isHidden { closeButton.animator().alphaValue = 1 }
         }
     }
 
@@ -169,6 +192,7 @@ final class SidebarTabIconView: NSView {
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = Theme.Motion.hover
             animator().alphaValue = 1
+            closeButton.animator().alphaValue = 0
         }
     }
 
