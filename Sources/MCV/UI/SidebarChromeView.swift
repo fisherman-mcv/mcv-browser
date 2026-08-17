@@ -326,6 +326,7 @@ final class SidebarChromeView: NSView {
     private let settingsButton = NSButton()
     private let actionStack = NSStackView()
     private let addButton = NSButton()
+    private let actionHubIcon = NSImageView()
     private var actionsExpanded = false
     private let branding = CyberpunkBrandingView()
     private let closeDot = TrafficLightButton(dotColor: NSColor(hex: "#FF5F57"), glyph: "×")
@@ -368,9 +369,27 @@ final class SidebarChromeView: NSView {
         scroll.translatesAutoresizingMaskIntoConstraints = false
 
         configureActionButton(addButton, symbol: "plus", description: "Actions")
+        addButton.image = nil
         addButton.target = self
         addButton.action = #selector(toggleActions)
         addButton.toolTip = "Actions"
+
+        let hubConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        actionHubIcon.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil)?
+            .withSymbolConfiguration(hubConfig)
+        actionHubIcon.image?.isTemplate = true
+        actionHubIcon.contentTintColor = Theme.textSecondary
+        actionHubIcon.imageScaling = .scaleNone
+        actionHubIcon.translatesAutoresizingMaskIntoConstraints = false
+        actionHubIcon.wantsLayer = true
+        actionHubIcon.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        addButton.addSubview(actionHubIcon)
+        NSLayoutConstraint.activate([
+            actionHubIcon.centerXAnchor.constraint(equalTo: addButton.centerXAnchor),
+            actionHubIcon.centerYAnchor.constraint(equalTo: addButton.centerYAnchor),
+            actionHubIcon.widthAnchor.constraint(equalToConstant: 16),
+            actionHubIcon.heightAnchor.constraint(equalToConstant: 16),
+        ])
 
         configureActionButton(settingsButton, symbol: "gearshape", description: "Settings")
         settingsButton.target = self
@@ -507,11 +526,19 @@ final class SidebarChromeView: NSView {
             context.duration = reducedMotion ? 0 : 0.18
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             actionStack.animator().alphaValue = expanded ? 1 : 0
-            addButton.animator().frameCenterRotation = expanded ? 45 : 0
         } completionHandler: { [weak self] in
             guard let self, !self.actionsExpanded else { return }
             self.actionStack.isHidden = true
         }
+        let targetAngle: CGFloat = expanded ? .pi / 4 : 0
+        let rotation = CABasicAnimation(keyPath: "transform.rotation.z")
+        rotation.fromValue = actionHubIcon.layer?.presentation()?.value(forKeyPath: "transform.rotation.z") ??
+            (expanded ? 0 : CGFloat.pi / 4)
+        rotation.toValue = targetAngle
+        rotation.duration = reducedMotion ? 0 : 0.18
+        rotation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        actionHubIcon.layer?.setAffineTransform(CGAffineTransform(rotationAngle: targetAngle))
+        actionHubIcon.layer?.add(rotation, forKey: "mcv.actionHubRotation")
         addButton.toolTip = expanded ? "Close Actions" : "Actions"
     }
 
