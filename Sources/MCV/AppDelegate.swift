@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var chromeWebStoreDownloads: Set<String> = []
     private var resourceController: ResourcePressureController?
     private var settingsController: SettingsWindowController?
+    private var pendingExternalURLs: [URL] = []
+    private var browserStarted = false
 
     private var sessionFileURL: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mcv/session.json")
@@ -47,7 +49,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restored = config.restoreSession ? loadSessionURLs() : []
         let pinned = loadPinnedTabURLs()
         let launchBrowser: () -> Void = { [weak self] in
-            self?.windowController.start(homepage: ConfigStore.shared.config.homepage, restored: restored, pinned: pinned)
+            guard let self else { return }
+            self.windowController.start(homepage: ConfigStore.shared.config.homepage, restored: restored, pinned: pinned)
+            self.browserStarted = true
+            self.openPendingExternalURLs()
         }
 
         if config.hasCompletedOnboarding {
@@ -61,6 +66,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        let webURLs = urls.filter { $0.scheme == "http" || $0.scheme == "https" }
+        guard !webURLs.isEmpty else { return }
+        pendingExternalURLs.append(contentsOf: webURLs)
+        if browserStarted { openPendingExternalURLs() }
+    }
+
+    private func openPendingExternalURLs() {
+        guard browserStarted, !pendingExternalURLs.isEmpty else { return }
+        let urls = pendingExternalURLs
+        pendingExternalURLs.removeAll(keepingCapacity: true)
+        urls.forEach { windowController.navigate(to: $0, newTab: true) }
+    }
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

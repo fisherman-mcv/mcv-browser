@@ -84,6 +84,7 @@ private final class GeneralSettingsViewController: SettingsPaneViewController {
     private let opacity = NSSlider(value: 1, minValue: 0.3, maxValue: 1, target: nil, action: nil)
     private let restore = NSButton(checkboxWithTitle: "Restore tabs after restart", target: nil, action: nil)
     private let sidebar = NSButton(checkboxWithTitle: "Use favicon sidebar", target: nil, action: nil)
+    private let defaultBrowser = NSButton(title: "Make Default", target: nil, action: nil)
 
     init(browser: BrowserWindowController) {
         self.browser = browser
@@ -105,6 +106,11 @@ private final class GeneralSettingsViewController: SettingsPaneViewController {
         search.selectItem(where: { ($0.representedObject as? String) == config.searchEngine })
         search.target = self; search.action = #selector(searchChanged)
         formRow("Default search engine", search)
+
+        defaultBrowser.target = self
+        defaultBrowser.action = #selector(makeDefaultBrowser)
+        updateDefaultBrowserButton()
+        formRow("Default browser", defaultBrowser)
 
         homepage.stringValue = config.homepage
         homepage.placeholderString = "https://example.com"
@@ -139,6 +145,22 @@ private final class GeneralSettingsViewController: SettingsPaneViewController {
     @objc private func opacityChanged() { browser?.setWindowOpacity(opacity.doubleValue) }
     @objc private func restoreChanged() { ConfigStore.shared.update { $0.restoreSession = restore.state == .on } }
     @objc private func sidebarChanged() { browser?.setSidebarMode(sidebar.state == .on) }
+    @objc private func makeDefaultBrowser() {
+        defaultBrowser.isEnabled = false
+        defaultBrowser.title = "Requesting…"
+        DefaultBrowserManager.makeDefault { [weak self] error in
+            guard let self else { return }
+            self.updateDefaultBrowserButton()
+            if let error { self.browser?.toast("Could not set default browser · \(error.localizedDescription)") }
+            else { self.browser?.toast("MCV is now the default browser") }
+        }
+    }
+
+    private func updateDefaultBrowserButton() {
+        let isDefault = DefaultBrowserManager.isDefault
+        defaultBrowser.title = isDefault ? "MCV is Default" : "Make Default"
+        defaultBrowser.isEnabled = !isDefault
+    }
 }
 
 private final class PrivacySettingsViewController: SettingsPaneViewController {
