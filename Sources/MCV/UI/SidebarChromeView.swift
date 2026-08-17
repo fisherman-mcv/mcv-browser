@@ -382,7 +382,6 @@ final class SidebarChromeView: NSView {
         actionHubIcon.imageScaling = .scaleNone
         actionHubIcon.translatesAutoresizingMaskIntoConstraints = false
         actionHubIcon.wantsLayer = true
-        actionHubIcon.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         addButton.addSubview(actionHubIcon)
         NSLayoutConstraint.activate([
             actionHubIcon.centerXAnchor.constraint(equalTo: addButton.centerXAnchor),
@@ -543,15 +542,12 @@ final class SidebarChromeView: NSView {
     }
 
     @objc private func newTapped() {
-        setActionsExpanded(false)
         onNewTab?()
     }
     @objc private func spotlightTapped() {
-        setActionsExpanded(false)
         onSpotlight?()
     }
     @objc private func settingsTapped() {
-        setActionsExpanded(false)
         onSettings?()
     }
 }
