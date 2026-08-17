@@ -327,4 +327,17 @@ Contributions should include a reproducible failure, a narrow patch and a test. 
 
 ## License
 
-No license has been selected yet. Copyright remains with the project owner; no permission to redistribute modified builds is implied. Choose an explicit license before accepting outside code. Legal ambiguity is not open source.
+MCV is dual-licensed:
+
+- personal and noncommercial use is free under the
+  [PolyForm Noncommercial License 1.0.0](LICENSE.md);
+- use by or for a for-profit business requires a separate paid commercial
+  license from F Corp; see [COMMERCIAL.md](COMMERCIAL.md);
+- MCV Cloud AI is an optional subscription and is never required for ordinary
+  browsing or local `gemma3:1b`.
+
+The hosted inference boundary is documented in
+[`Docs/MCV_CLOUD_API.md`](Docs/MCV_CLOUD_API.md); no checkout is shown until the
+service, privacy terms and cancellation path actually exist.
+
+This is source-available software, not OSI open source. Precise words are useful.
