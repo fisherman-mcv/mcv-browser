@@ -842,7 +842,11 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     var currentTitle: String? { tabManager.current?.displayTitle }
 
     func navigate(to url: URL, newTab: Bool) {
-        if newTab || tabManager.current == nil {
+        // Address-bar/command navigation must never replace a pinned site's
+        // identity. Links clicked inside the page still navigate normally via
+        // WebKit; only browser-level navigation is redirected to a fresh tab.
+        let protectPinned = tabManager.current?.isPinned == true
+        if newTab || protectPinned || tabManager.current == nil {
             tabManager.newTab(url: url)
         } else {
             tabManager.current?.load(url)

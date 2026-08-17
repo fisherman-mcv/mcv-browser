@@ -117,6 +117,23 @@ final class ResourceLifecycleTests: XCTestCase {
         XCTAssertFalse(controller.tabManager.current?.isPinned ?? true)
     }
 
+    @MainActor
+    func testAddressNavigationNeverReplacesPinnedTab() {
+        _ = NSApplication.shared
+        let controller = BrowserWindowController()
+        let pinnedURL = URL(string: "https://example.com/important")!
+        let destination = URL(string: "https://search.example/result")!
+        controller.tabManager.newTab(url: pinnedURL, pinned: true)
+
+        controller.navigate(to: destination, newTab: false)
+
+        XCTAssertEqual(controller.tabManager.tabs.count, 2)
+        XCTAssertEqual(controller.tabManager.tabs[0].logicalURL, pinnedURL)
+        XCTAssertTrue(controller.tabManager.tabs[0].isPinned)
+        XCTAssertEqual(controller.tabManager.current?.logicalURL, destination)
+        XCTAssertFalse(controller.tabManager.current?.isPinned ?? true)
+    }
+
     func testSwitchingTabsDoesNotSuspendBackgroundMusic() {
         let manager = TabManager()
         let music = manager.newTab(url: nil)
