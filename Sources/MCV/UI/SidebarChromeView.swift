@@ -529,15 +529,19 @@ final class SidebarChromeView: NSView {
             guard let self, !self.actionsExpanded else { return }
             self.actionStack.isHidden = true
         }
-        let targetAngle: CGFloat = expanded ? .pi / 4 : 0
-        let rotation = CABasicAnimation(keyPath: "transform.rotation.z")
-        rotation.fromValue = actionHubIcon.layer?.presentation()?.value(forKeyPath: "transform.rotation.z") ??
-            (expanded ? 0 : CGFloat.pi / 4)
-        rotation.toValue = targetAngle
-        rotation.duration = reducedMotion ? 0 : 0.18
-        rotation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        actionHubIcon.layer?.setAffineTransform(CGAffineTransform(rotationAngle: targetAngle))
-        actionHubIcon.layer?.add(rotation, forKey: "mcv.actionHubRotation")
+        if !reducedMotion {
+            let transition = CATransition()
+            transition.type = .fade
+            transition.duration = 0.14
+            transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            actionHubIcon.layer?.add(transition, forKey: "mcv.actionHubSymbol")
+        }
+        let hubConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        actionHubIcon.image = NSImage(
+            systemSymbolName: expanded ? "xmark" : "plus",
+            accessibilityDescription: expanded ? "Close Actions" : "Actions"
+        )?.withSymbolConfiguration(hubConfig)
+        actionHubIcon.image?.isTemplate = true
         addButton.toolTip = expanded ? "Close Actions" : "Actions"
     }
 
