@@ -30,10 +30,14 @@ class CardSurface: NSView {
             backgroundContainer.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
 
-        if #available(macOS 26.0, *) {
-            let glass = NSGlassEffectView()
-            glass.cornerRadius = cornerRadius
-            glass.contentView = contentHost
+        // Resolve Liquid Glass dynamically so the same source also compiles
+        // with the macOS 14 SDK used by public CI. The class exists only in
+        // newer AppKit; the fallback remains the authoritative old-SDK path.
+        if #available(macOS 26.0, *),
+           let glassType = NSClassFromString("NSGlassEffectView") as? NSView.Type {
+            let glass = glassType.init(frame: .zero)
+            glass.setValue(cornerRadius, forKey: "cornerRadius")
+            glass.setValue(contentHost, forKey: "contentView")
             glass.translatesAutoresizingMaskIntoConstraints = false
             backgroundContainer.addSubview(glass)
             pin(glass, to: backgroundContainer)
