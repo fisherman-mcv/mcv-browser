@@ -181,19 +181,53 @@ final class BookmarksSidebarView: NSVisualEffectView, NSOutlineViewDataSource, N
     func menuWillOpen(_ menu: NSMenu) {
         menu.removeAllItems()
         let row = outline.clickedRow >= 0 ? outline.clickedRow : outline.selectedRow
-        guard row >= 0, let node = node(outline.item(atRow: row)), node.storageKey != nil else {
+        guard row >= 0, let node = node(outline.item(atRow: row)) else {
             contextNode = nil
             return
         }
         contextNode = node
-        let delete = menu.addItem(withTitle: "Delete Bookmark", action: #selector(deleteContextBookmark), keyEquivalent: "")
-        delete.target = self
+        if node.url == nil {
+            let ungroup = menu.addItem(withTitle: "Ungroup Folder (Keep Bookmarks)",
+                                       action: #selector(ungroupContextFolder), keyEquivalent: "")
+            ungroup.target = self
+            menu.addItem(.separator())
+            let delete = menu.addItem(withTitle: "Delete Folder…",
+                                      action: #selector(deleteContextFolder), keyEquivalent: "")
+            delete.target = self
+        } else if node.storageKey != nil {
+            let delete = menu.addItem(withTitle: "Delete Bookmark",
+                                      action: #selector(deleteContextBookmark), keyEquivalent: "")
+            delete.target = self
+        }
     }
 
     @objc private func deleteContextBookmark() {
         guard let key = contextNode?.storageKey else { return }
         ConfigStore.shared.update { $0.bookmarks.removeValue(forKey: key) }
         contextNode = nil
+    }
+
+    @objc private func ungroupContextFolder() {
+        guard let folder = contextNode, folder.url == nil else { return }
+        let name = folder.title
+        contextNode = nil
+        ConfigStore.shared.update { $0.ungroupBookmarkFolder(named: name) }
+    }
+
+    @objc private func deleteContextFolder() {
+        guard let folder = contextNode, folder.url == nil else { return }
+        let name = folder.title
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Delete “\(name)”?"
+        alert.informativeText = folder.children.isEmpty
+            ? "The empty bookmark folder will be removed."
+            : "This will also delete \(folder.children.count) bookmark\(folder.children.count == 1 ? "" : "s") inside it."
+        alert.addButton(withTitle: "Delete")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        contextNode = nil
+        ConfigStore.shared.update { $0.deleteBookmarkFolder(named: name) }
     }
 
     private func activateSelection() {

@@ -4,6 +4,36 @@ import WebKit
 
 @MainActor
 final class ResourceLifecycleTests: XCTestCase {
+    func testBookmarkFolderCanBeUngroupedWithoutLosingBookmarks() {
+        var config = MCVConfig.standard
+        config.bookmarkFolders = ["Research"]
+        config.bookmarks = [
+            "Existing": "https://existing.example",
+            "Research/Existing": "https://collision.example",
+            "Research/Paper": "https://paper.example",
+        ]
+
+        config.ungroupBookmarkFolder(named: "Research")
+
+        XCTAssertFalse(config.bookmarkFolders.contains("Research"))
+        XCTAssertEqual(config.bookmarks["Paper"], "https://paper.example")
+        XCTAssertEqual(config.bookmarks["Existing"], "https://existing.example")
+        XCTAssertEqual(config.bookmarks["Existing 2"], "https://collision.example")
+        XCTAssertFalse(config.bookmarks.keys.contains { $0.hasPrefix("Research/") })
+    }
+
+    func testBookmarkFolderCanBeDeletedWithItsContents() {
+        var config = MCVConfig.standard
+        config.bookmarkFolders = ["Delete Me", "Keep"]
+        config.bookmarks = ["Delete Me/A": "https://a.example", "Keep/B": "https://b.example"]
+
+        config.deleteBookmarkFolder(named: "Delete Me")
+
+        XCTAssertEqual(config.bookmarkFolders, ["Keep"])
+        XCTAssertNil(config.bookmarks["Delete Me/A"])
+        XCTAssertEqual(config.bookmarks["Keep/B"], "https://b.example")
+    }
+
     @MainActor
     func testTabReorderingCannotCrossPinnedBoundary() {
         _ = NSApplication.shared

@@ -59,6 +59,30 @@ struct MCVConfig: Codable {
 }
 
 extension MCVConfig {
+    mutating func ungroupBookmarkFolder(named folder: String) {
+        let prefix = folder + "/"
+        let entries = bookmarks.filter { $0.key.hasPrefix(prefix) }
+        for key in entries.keys { bookmarks.removeValue(forKey: key) }
+        bookmarkFolders.removeAll { $0 == folder }
+
+        for (key, value) in entries.sorted(by: { $0.key < $1.key }) {
+            let leaf = String(key.dropFirst(prefix.count))
+            var destination = leaf
+            var suffix = 2
+            while bookmarks[destination] != nil {
+                destination = "\(leaf) \(suffix)"
+                suffix += 1
+            }
+            bookmarks[destination] = value
+        }
+    }
+
+    mutating func deleteBookmarkFolder(named folder: String) {
+        let prefix = folder + "/"
+        bookmarks = bookmarks.filter { !$0.key.hasPrefix(prefix) }
+        bookmarkFolders.removeAll { $0 == folder }
+    }
+
     // Ручний decode: юзер може тримати в конфігу лише частину ключів —
     // відсутні поля добираються зі стандартних, а не валять весь файл.
     init(from decoder: Decoder) throws {
