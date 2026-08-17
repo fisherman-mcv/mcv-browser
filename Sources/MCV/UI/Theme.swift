@@ -18,11 +18,26 @@ extension NSColor {
 }
 
 /// Дизайн-система MCV: "Браузер для архітекторів". Кольори тримаються як
-/// точні значення (не системний dark/light), бо тема перемикається командою
-/// `dark`/`light`, а не слідує macOS. Хто змінює зовнішній вигляд — підписується
+/// точні значення поверх dark/light appearance. Режим `system` слідує macOS.
+/// Хто змінює зовнішній вигляд — підписується
 /// на `.mcvThemeChanged` і перечитує токени в `applyStyle()`.
 enum Theme {
-    private(set) static var isDark = ConfigStore.shared.config.theme != "light"
+    private(set) static var isDark = resolvedDark(for: ConfigStore.shared.config.theme)
+
+    static func resolvedDark(for mode: String) -> Bool {
+        if mode == "dark" { return true }
+        if mode == "light" { return false }
+        return NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
+    static func apply(mode: String) {
+        switch mode {
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        default: NSApp.appearance = nil
+        }
+        update(dark: resolvedDark(for: mode))
+    }
 
     /// Всі підписники перефарбовують шари синхронно всередині CATransaction,
     /// тому одна ambient-анімація (0.3s) плавно охоплює весь інтерфейс разом.

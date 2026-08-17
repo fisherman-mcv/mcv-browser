@@ -1,0 +1,13 @@
+{
+  "pages": 10,
+  "coverageAccuracyMean": 93,
+  "extractLatencyMedianMs": 34,
+  "rawModelJSONValidityMean": 50,
+  "semanticAPIValidity": 100,
+  "semanticAPIStabilityMean": 100,
+  "hallucinatedFields": 0,
+  "rejectedOutputs": 15,
+  "modelLatencyMedianMs": 6442,
+  "promptTokensMedian": 1492,
+  "contextCharsMedian": 4110
+}

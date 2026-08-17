@@ -73,7 +73,7 @@ class CardSurface: NSView {
     @objc func applyStyle() {
         if hasShadow {
             layer?.shadowColor = NSColor.black.cgColor
-            layer?.shadowOpacity = 0.4
+            layer?.shadowOpacity = Theme.isDark ? 0.4 : 0.14
             layer?.shadowRadius = 16
             layer?.shadowOffset = CGSize(width: 0, height: -6)
             layer?.masksToBounds = false

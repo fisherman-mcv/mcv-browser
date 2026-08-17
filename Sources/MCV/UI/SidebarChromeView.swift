@@ -1,12 +1,18 @@
 import AppKit
 
 struct SidebarTabModel {
+    let tabIndex: Int
     let favicon: NSImage?
     let isActive: Bool
     let isLoading: Bool
     let isPinned: Bool
     let isPlayingAudio: Bool
     let hasUnread: Bool
+    var groupID: UUID? = nil
+    var groupTitle: String? = nil
+    var groupCount: Int = 0
+    var groupColor: NSColor? = nil
+    var isGroup: Bool = false
 }
 
 /// Одна іконка вкладки: тільки фавікон, без назви. Індикатори — маленькі
@@ -18,11 +24,21 @@ final class SidebarTabIconView: NSView {
     var onClose: (() -> Void)?
     var onTogglePin: (() -> Void)?
     var onDuplicate: (() -> Void)?
+    var onDragEnded: ((NSPoint) -> Void)?
+    var onToggleGroup: (() -> Void)?
+    var onCloseGroup: (() -> Void)?
+    var onHibernateGroup: (() -> Void)?
+    var onBookmarkGroup: (() -> Void)?
+    var onColorGroup: ((Int) -> Void)?
+    var onUngroup: (() -> Void)?
 
     private let iconView = NSImageView()
     private let statusBadge = NSTextField(labelWithString: "")
     private let pinBadge = NSTextField(labelWithString: "📌")
+    private let miniFavicon = NSImageView()
     private var trackingArea: NSTrackingArea?
+    private var isGroup = false
+    private var model: SidebarTabModel?
 
     /// Трохи більше за самі traffic-light-кружечки (12px), не повний розмір
     /// класичного фавікона — панель має лишатись вузькою.
@@ -55,6 +71,11 @@ final class SidebarTabIconView: NSView {
         addSubview(iconView)
         addSubview(statusBadge)
         addSubview(pinBadge)
+        addSubview(miniFavicon)
+        miniFavicon.imageScaling = .scaleProportionallyDown
+        miniFavicon.wantsLayer = true
+        miniFavicon.layer?.cornerRadius = 2
+        miniFavicon.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
             iconView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
@@ -66,17 +87,32 @@ final class SidebarTabIconView: NSView {
 
             pinBadge.leadingAnchor.constraint(equalTo: leadingAnchor),
             pinBadge.topAnchor.constraint(equalTo: topAnchor),
+            miniFavicon.trailingAnchor.constraint(equalTo: trailingAnchor),
+            miniFavicon.bottomAnchor.constraint(equalTo: bottomAnchor),
+            miniFavicon.widthAnchor.constraint(equalToConstant: 9),
+            miniFavicon.heightAnchor.constraint(equalToConstant: 9),
         ])
 
         let click = NSClickGestureRecognizer(target: self, action: #selector(tapped))
         addGestureRecognizer(click)
+        addGestureRecognizer(NSPanGestureRecognizer(target: self, action: #selector(dragged(_:))))
         toolTip = nil
+        NotificationCenter.default.addObserver(self, selector: #selector(themeChanged), name: .mcvThemeChanged, object: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("not supported") }
+    deinit { NotificationCenter.default.removeObserver(self) }
 
     func configure(_ model: SidebarTabModel) {
-        if let favicon = model.favicon {
+        self.model = model
+        isGroup = model.isGroup
+        miniFavicon.isHidden = !model.isGroup || model.favicon == nil
+        miniFavicon.image = model.favicon
+        if model.isGroup {
+            iconView.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: model.groupTitle)
+            iconView.contentTintColor = model.groupColor ?? Theme.textPrimary
+            toolTip = "\(model.groupTitle ?? "Tab Group") · \(model.groupCount) tabs"
+        } else if let favicon = model.favicon {
             iconView.image = favicon
             iconView.contentTintColor = nil
         } else {
@@ -91,9 +127,13 @@ final class SidebarTabIconView: NSView {
             : NSColor.clear.cgColor
         layer?.cornerRadius = 6
 
-        pinBadge.isHidden = !model.isPinned
+        pinBadge.isHidden = model.isGroup || !model.isPinned
 
-        if model.isLoading {
+        if model.isGroup {
+            statusBadge.stringValue = "\(model.groupCount)"
+            statusBadge.textColor = model.groupColor ?? Theme.textPrimary
+            statusBadge.isHidden = false
+        } else if model.isLoading {
             statusBadge.stringValue = "⏳"
             statusBadge.isHidden = false
         } else if model.isPlayingAudio {
@@ -107,6 +147,8 @@ final class SidebarTabIconView: NSView {
             statusBadge.isHidden = true
         }
     }
+
+    @objc private func themeChanged() { if let model { configure(model) } }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -132,18 +174,68 @@ final class SidebarTabIconView: NSView {
 
     override func rightMouseDown(with event: NSEvent) {
         let menu = NSMenu()
-        menu.addItem(withTitle: "Закріпити/Відкріпити", action: #selector(pinTapped), keyEquivalent: "")
+        if isGroup {
+            menu.addItem(withTitle: "Expand/Collapse Group", action: #selector(groupTapped), keyEquivalent: "").target = self
+            let colors = NSMenu(title: "Group Color")
+            let automatic = colors.addItem(withTitle: "Automatic (Theme)", action: #selector(colorGroupTapped(_:)), keyEquivalent: "")
+            automatic.target = self
+            automatic.tag = -1
+            colors.addItem(.separator())
+            for (index, color) in ["Cyan", "Violet", "Rose", "Amber", "Emerald", "Blue"].enumerated() {
+                let item = colors.addItem(withTitle: color, action: #selector(colorGroupTapped(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = index
+                item.image = Self.colorSwatch(index)
+            }
+            let colorItem = NSMenuItem(title: "Group Color", action: nil, keyEquivalent: "")
+            colorItem.submenu = colors
+            menu.addItem(colorItem)
+            menu.addItem(.separator())
+            menu.addItem(withTitle: "Hibernate Group", action: #selector(hibernateGroupTapped), keyEquivalent: "").target = self
+            menu.addItem(withTitle: "Bookmark Group", action: #selector(bookmarkGroupTapped), keyEquivalent: "").target = self
+            menu.addItem(withTitle: "Ungroup", action: #selector(ungroupTapped), keyEquivalent: "").target = self
+            menu.addItem(.separator())
+            menu.addItem(withTitle: "Close Group", action: #selector(closeGroupTapped), keyEquivalent: "").target = self
+            NSMenu.popUpContextMenu(menu, with: event, for: self)
+            return
+        }
+        menu.addItem(withTitle: "Pin/Unpin", action: #selector(pinTapped), keyEquivalent: "")
             .target = self
-        menu.addItem(withTitle: "Дублювати", action: #selector(dupTapped), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Duplicate", action: #selector(dupTapped), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Закрити вкладку", action: #selector(closeTapped), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Close Tab", action: #selector(closeTapped), keyEquivalent: "").target = self
         NSMenu.popUpContextMenu(menu, with: event, for: self)
     }
 
-    @objc private func tapped() { onSelect?() }
+    @objc private func tapped() { isGroup ? onToggleGroup?() : onSelect?() }
     @objc private func closeTapped() { onClose?() }
     @objc private func pinTapped() { onTogglePin?() }
     @objc private func dupTapped() { onDuplicate?() }
+    @objc private func groupTapped() { onToggleGroup?() }
+    @objc private func closeGroupTapped() { onCloseGroup?() }
+    @objc private func hibernateGroupTapped() { onHibernateGroup?() }
+    @objc private func bookmarkGroupTapped() { onBookmarkGroup?() }
+    @objc private func colorGroupTapped(_ sender: NSMenuItem) { onColorGroup?(sender.tag) }
+    @objc private func ungroupTapped() { onUngroup?() }
+
+    private static func colorSwatch(_ index: Int) -> NSImage {
+        let colors = ["#66D9EF", "#A78BFA", "#FB7185", "#FBBF24", "#34D399", "#60A5FA"]
+        let image = NSImage(size: NSSize(width: 12, height: 12))
+        image.lockFocus()
+        (NSColor(hex: colors[index])).setFill()
+        NSBezierPath(roundedRect: NSRect(x: 1, y: 1, width: 10, height: 10), xRadius: 3, yRadius: 3).fill()
+        image.unlockFocus()
+        return image
+    }
+    @objc private func dragged(_ recognizer: NSPanGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed: alphaValue = 0.5
+        case .ended:
+            alphaValue = 1
+            onDragEnded?(recognizer.location(in: nil))
+        default: alphaValue = 1
+        }
+    }
 }
 
 /// Документ-в'ю для NSScrollView зі звичайною (не перевернутою) системою
@@ -215,12 +307,22 @@ final class SidebarChromeView: NSView {
     var onTogglePin: ((Int) -> Void)?
     var onDuplicateTab: ((Int) -> Void)?
     var onNewTab: (() -> Void)?
+    var onSpotlight: (() -> Void)?
+    var onMoveTab: ((Int, Int) -> Void)?
+    var onGroupTabs: ((Int, Int) -> Void)?
+    var onToggleGroup: ((UUID) -> Void)?
+    var onCloseGroup: ((UUID) -> Void)?
+    var onHibernateGroup: ((UUID) -> Void)?
+    var onBookmarkGroup: ((UUID) -> Void)?
+    var onColorGroup: ((UUID, Int) -> Void)?
+    var onUngroup: ((UUID) -> Void)?
 
     private let effect = NSVisualEffectView()
-    private let tint = NSView()
     private let scroll = NSScrollView()
     private let stack = FlippedStackView()
+    private let spotlightButton = NSButton()
     private let addButton = NSButton()
+    private let branding = CyberpunkBrandingView()
     private let closeDot = TrafficLightButton(dotColor: NSColor(hex: "#FF5F57"), glyph: "×")
     private let minimizeDot = TrafficLightButton(dotColor: NSColor(hex: "#FEBC2E"), glyph: "−")
     private let zoomDot = TrafficLightButton(dotColor: NSColor(hex: "#28C840"), glyph: "+")
@@ -230,10 +332,13 @@ final class SidebarChromeView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
         widthAnchor.constraint(equalToConstant: Self.width).isActive = true
 
-        // Той самий .sidebar material, що й база вікна (BrowserWindowController) —
-        // без рамки/тіні, тож панель виглядає продовженням вікна, не окремою карткою.
-        effect.material = .sidebar
-        effect.blendingMode = .behindWindow
+        // hudWindow + withinWindow — той самий рецепт, що й у CardSurface для
+        // командного рядка/палітри тощо: withinWindow блендить із тим, що вже
+        // позаду в межах вікна (наше власне темне тло), а не з реальним
+        // робочим столом (behindWindow), який тягнув колір шпалер напряму —
+        // звідси й був синюватий відтінок, що не збігався з рештою UI.
+        effect.material = .hudWindow
+        effect.blendingMode = .withinWindow
         effect.state = .active
         effect.translatesAutoresizingMaskIntoConstraints = false
         addSubview(effect)
@@ -242,21 +347,6 @@ final class SidebarChromeView: NSView {
             effect.trailingAnchor.constraint(equalTo: trailingAnchor),
             effect.topAnchor.constraint(equalTo: topAnchor),
             effect.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-
-        // .behindWindow тягне колір робочого столу крізь блюр (часто синюватий) —
-        // сторінка поруч непрозоро-чорна, тож без нейтралізації виходить видимий
-        // шов. Темний скрим (підшар усередині effect, під іконками) гасить
-        // відтінок, лишаючи саму лише прозорість/блюр.
-        tint.wantsLayer = true
-        tint.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.38).cgColor
-        tint.translatesAutoresizingMaskIntoConstraints = false
-        effect.addSubview(tint)
-        NSLayoutConstraint.activate([
-            tint.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
-            tint.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
-            tint.topAnchor.constraint(equalTo: effect.topAnchor),
-            tint.bottomAnchor.constraint(equalTo: effect.bottomAnchor),
         ])
 
         stack.orientation = .vertical
@@ -273,7 +363,7 @@ final class SidebarChromeView: NSView {
         scroll.translatesAutoresizingMaskIntoConstraints = false
 
         let plusConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
-        addButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Нова вкладка")?
+        addButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "New Tab")?
             .withSymbolConfiguration(plusConfig)
         addButton.image?.isTemplate = true
         addButton.contentTintColor = Theme.textSecondary
@@ -281,8 +371,20 @@ final class SidebarChromeView: NSView {
         addButton.title = ""
         addButton.target = self
         addButton.action = #selector(newTapped)
-        addButton.toolTip = "Нова вкладка (⌘T)"
+        addButton.toolTip = "New Tab (⌘T)"
         addButton.translatesAutoresizingMaskIntoConstraints = false
+
+        let spotlightConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        spotlightButton.image = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: "Spotlight")?
+            .withSymbolConfiguration(spotlightConfig)
+        spotlightButton.image?.isTemplate = true
+        spotlightButton.contentTintColor = Theme.textSecondary
+        spotlightButton.isBordered = false
+        spotlightButton.title = ""
+        spotlightButton.target = self
+        spotlightButton.action = #selector(spotlightTapped)
+        spotlightButton.toolTip = "Spotlight URL Bar (⌘E)"
+        spotlightButton.translatesAutoresizingMaskIntoConstraints = false
 
         let trafficLights = NSStackView(views: [closeDot, minimizeDot, zoomDot])
         trafficLights.orientation = .vertical
@@ -290,16 +392,23 @@ final class SidebarChromeView: NSView {
         trafficLights.translatesAutoresizingMaskIntoConstraints = false
 
         effect.addSubview(trafficLights)
+        branding.translatesAutoresizingMaskIntoConstraints = false
+        effect.addSubview(branding)
         effect.addSubview(scroll)
+        effect.addSubview(spotlightButton)
         effect.addSubview(addButton)
         NSLayoutConstraint.activate([
             trafficLights.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
             trafficLights.topAnchor.constraint(equalTo: effect.topAnchor, constant: 14),
+            branding.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
+            branding.bottomAnchor.constraint(equalTo: spotlightButton.topAnchor, constant: -42),
+            branding.widthAnchor.constraint(equalToConstant: 24),
+            branding.heightAnchor.constraint(equalToConstant: 132),
 
             scroll.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
             scroll.topAnchor.constraint(equalTo: effect.topAnchor, constant: Self.trafficLightsReservedHeight),
-            scroll.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.xs),
+            scroll.bottomAnchor.constraint(equalTo: spotlightButton.topAnchor, constant: -Theme.Spacing.xs),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
             stack.topAnchor.constraint(equalTo: scroll.contentView.topAnchor, constant: Theme.Spacing.xs),
@@ -309,6 +418,10 @@ final class SidebarChromeView: NSView {
             addButton.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -Theme.Spacing.sm),
             addButton.widthAnchor.constraint(equalToConstant: 20),
             addButton.heightAnchor.constraint(equalToConstant: 20),
+            spotlightButton.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
+            spotlightButton.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.sm),
+            spotlightButton.widthAnchor.constraint(equalToConstant: 20),
+            spotlightButton.heightAnchor.constraint(equalToConstant: 20),
         ])
     }
 
@@ -322,21 +435,112 @@ final class SidebarChromeView: NSView {
         minimizeDot.target = window
         minimizeDot.action = #selector(NSWindow.performMiniaturize(_:))
         zoomDot.target = window
-        zoomDot.action = #selector(NSWindow.performZoom(_:))
+        zoomDot.action = #selector(NSWindow.toggleFullScreen(_:))
     }
 
     func reload(_ models: [SidebarTabModel]) {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for (index, model) in models.enumerated() {
+        for model in models {
             let icon = SidebarTabIconView()
             icon.configure(model)
-            icon.onSelect = { [weak self] in self?.onSelectTab?(index) }
-            icon.onClose = { [weak self] in self?.onCloseTab?(index) }
-            icon.onTogglePin = { [weak self] in self?.onTogglePin?(index) }
-            icon.onDuplicate = { [weak self] in self?.onDuplicateTab?(index) }
+            icon.onSelect = { [weak self] in self?.onSelectTab?(model.tabIndex) }
+            icon.onClose = { [weak self] in self?.onCloseTab?(model.tabIndex) }
+            icon.onTogglePin = { [weak self] in self?.onTogglePin?(model.tabIndex) }
+            icon.onDuplicate = { [weak self] in self?.onDuplicateTab?(model.tabIndex) }
+            if let groupID = model.groupID {
+                icon.onToggleGroup = { [weak self] in self?.onToggleGroup?(groupID) }
+                icon.onCloseGroup = { [weak self] in self?.onCloseGroup?(groupID) }
+                icon.onHibernateGroup = { [weak self] in self?.onHibernateGroup?(groupID) }
+                icon.onBookmarkGroup = { [weak self] in self?.onBookmarkGroup?(groupID) }
+                icon.onColorGroup = { [weak self] color in self?.onColorGroup?(groupID, color) }
+                icon.onUngroup = { [weak self] in self?.onUngroup?(groupID) }
+            }
+            icon.onDragEnded = { [weak self] point in
+                guard let self, !model.isGroup else { return }
+                let local = self.stack.convert(point, from: nil)
+                guard let target = self.stack.arrangedSubviews.enumerated().min(by: {
+                    abs($0.element.frame.midY - local.y) < abs($1.element.frame.midY - local.y)
+                })?.offset, models.indices.contains(target) else { return }
+                let targetModel = models[target]
+                if abs(self.stack.arrangedSubviews[target].frame.midY - local.y) < 7,
+                   targetModel.tabIndex != model.tabIndex {
+                    self.onGroupTabs?(model.tabIndex, targetModel.tabIndex)
+                } else {
+                    self.onMoveTab?(model.tabIndex, targetModel.tabIndex)
+                }
+            }
             stack.addArrangedSubview(icon)
         }
     }
 
     @objc private func newTapped() { onNewTab?() }
+    @objc private func spotlightTapped() { onSpotlight?() }
+}
+
+/// Bespoke 5×7 dot-matrix wordmark: Nothing-inspired geometry with sparse
+/// cyberpunk signal pixels. Drawing it ourselves keeps it crisp and avoids a
+/// bundled/font-install dependency.
+private final class CyberpunkBrandingView: NSView {
+    private let glyphs: [Character: [String]] = [
+        "M":["10001","11011","10101","10101","10001","10001","10001"],
+        "C":["01111","10000","10000","10000","10000","10000","01111"],
+        "B":["11110","10001","10001","11110","10001","10001","11110"],
+        "R":["11110","10001","10001","11110","10100","10010","10001"],
+        "O":["01110","10001","10001","10001","10001","10001","01110"],
+        "W":["10001","10001","10001","10101","10101","10101","01010"],
+        "S":["01111","10000","10000","01110","00001","00001","11110"],
+        "E":["11111","10000","10000","11110","10000","10000","11111"]
+    ]
+
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        NotificationCenter.default.addObserver(self, selector: #selector(redraw),
+                                                name: .mcvThemeChanged, object: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("not supported") }
+    deinit { NotificationCenter.default.removeObserver(self) }
+    @objc private func redraw() { needsDisplay = true }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        let word = Array("MCBROWSER")
+        let cell: CGFloat = 1.55
+        let advance = cell * 6
+        let totalWidth = CGFloat(word.count) * advance - cell
+        let totalHeight = cell * 7
+
+        context.saveGState()
+        context.translateBy(x: bounds.midX, y: bounds.midY)
+        context.rotate(by: -.pi / 2)
+        let originX = -totalWidth / 2
+        let originY = -totalHeight / 2
+
+        for (glyphIndex, character) in word.enumerated() {
+            guard let rows = glyphs[character] else { continue }
+            for (row, bits) in rows.enumerated() {
+                for (column, bit) in bits.enumerated() where bit == "1" {
+                    let isSignal = (glyphIndex * 7 + row * 5 + column) % 23 == 0
+                    let color = isSignal
+                        ? Theme.accent.withAlphaComponent(0.92)
+                        : Theme.textSecondary.withAlphaComponent(Theme.isDark ? 0.52 : 0.62)
+                    color.setFill()
+                    let x = originX + CGFloat(glyphIndex) * advance + CGFloat(column) * cell
+                    let y = originY + CGFloat(row) * cell
+                    NSBezierPath(ovalIn: NSRect(x: x, y: y, width: cell * 0.64, height: cell * 0.64)).fill()
+                }
+            }
+        }
+
+        // Small asymmetric rails make the wordmark feel engineered rather
+        // than like ordinary rotated text.
+        Theme.accent.withAlphaComponent(0.48).setFill()
+        NSBezierPath(rect: NSRect(x: originX - 5, y: originY + 1, width: 3.5, height: 0.8)).fill()
+        NSBezierPath(rect: NSRect(x: originX + totalWidth + 1.5, y: originY + totalHeight - 1.8,
+                                  width: 5, height: 0.8)).fill()
+        context.restoreGState()
+    }
 }

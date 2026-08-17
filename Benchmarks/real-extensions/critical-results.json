@@ -1,0 +1,34 @@
+[
+  {
+    "baselineAdErrors" : 0,
+    "extension" : "uBlock Origin Lite",
+    "reason" : "DNR blocked additional advertising\/tracker scripts on three origins",
+    "status" : "PASS",
+    "withExtensionAdErrors" : 12
+  },
+  {
+    "extension" : "Dark Reader",
+    "pagesChanged" : 3,
+    "pagesTested" : 3,
+    "reason" : "Dark Reader production style markers detected on 3\/3 pages",
+    "status" : "PASS"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "contentInjection" : true,
+    "extension" : "Bitwarden",
+    "popupLoaded" : true,
+    "popupState" : {
+      "errors" : [
+
+      ],
+      "ready" : "complete",
+      "root" : true,
+      "scripts" : 5
+    },
+    "reason" : "Popup, storage bridge and login-page content scripts load; vault unlock\/autofill cannot complete because nativeMessaging\/offscreen\/auth flows are incomplete",
+    "status" : "PARTIAL"
+  }
+]

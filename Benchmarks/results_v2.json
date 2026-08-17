@@ -1,0 +1,1047 @@
+[
+  {
+    "type": "Wikipedia/article",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 48,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 3808,
+    "promptTokensMedian": 1050,
+    "contextChars": 3040,
+    "factCount": 220,
+    "runs": [
+      {
+        "latencyMs": 7326,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "documentation",
+          "sections": [
+            {
+              "label": "details",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 1.0
+        },
+        "promptTokens": 1050,
+        "outputTokens": 100
+      },
+      {
+        "latencyMs": 3808,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "documentation",
+          "sections": [
+            {
+              "label": "details",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 1.0
+        },
+        "promptTokens": 1050,
+        "outputTokens": 100
+      },
+      {
+        "latencyMs": 3570,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "documentation",
+          "sections": [
+            {
+              "label": "details",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 1.0
+        },
+        "promptTokens": 1050,
+        "outputTokens": 100
+      }
+    ]
+  },
+  {
+    "type": "Amazon/product",
+    "coverageAccuracy": 33,
+    "extractLatencyMs": 835,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 0,
+    "promptTokensMedian": 0,
+    "contextChars": 776,
+    "factCount": 10,
+    "runs": [
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      }
+    ]
+  },
+  {
+    "type": "YouTube/video",
+    "coverageAccuracy": 0,
+    "extractLatencyMs": 838,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 0,
+    "promptTokensMedian": 0,
+    "contextChars": 189,
+    "factCount": 1,
+    "runs": [
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      }
+    ]
+  },
+  {
+    "type": "GitHub/repository",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 33,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 0,
+    "acceptedSelections": 0,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 3,
+    "modelLatencyMedianMs": 5805,
+    "promptTokensMedian": 1816,
+    "contextChars": 4123,
+    "factCount": 220,
+    "runs": [
+      {
+        "latencyMs": 8084,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "repository",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1816,
+        "outputTokens": 150
+      },
+      {
+        "latencyMs": 5759,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "repository",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1816,
+        "outputTokens": 150
+      },
+      {
+        "latencyMs": 5805,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "repository",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1816,
+        "outputTokens": 150
+      }
+    ]
+  },
+  {
+    "type": "Reddit/thread",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 34,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 3778,
+    "promptTokensMedian": 1449,
+    "contextChars": 4483,
+    "factCount": 220,
+    "runs": [
+      {
+        "latencyMs": 6488,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "article",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 0.98
+        },
+        "promptTokens": 1449,
+        "outputTokens": 84
+      },
+      {
+        "latencyMs": 2963,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "article",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 0.98
+        },
+        "promptTokens": 1449,
+        "outputTokens": 84
+      },
+      {
+        "latencyMs": 3778,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "article",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 0.98
+        },
+        "promptTokens": 1449,
+        "outputTokens": 84
+      }
+    ]
+  },
+  {
+    "type": "news article",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 12,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 6584,
+    "promptTokensMedian": 1326,
+    "contextChars": 3961,
+    "factCount": 43,
+    "runs": [
+      {
+        "latencyMs": 7865,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "article",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            },
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 0.9
+        },
+        "promptTokens": 1326,
+        "outputTokens": 135
+      },
+      {
+        "latencyMs": 5600,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "article",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            },
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 0.9
+        },
+        "promptTokens": 1326,
+        "outputTokens": 135
+      },
+      {
+        "latencyMs": 6584,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "article",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            },
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12"
+              ]
+            }
+          ],
+          "confidence": 0.9
+        },
+        "promptTokens": 1326,
+        "outputTokens": 135
+      }
+    ]
+  },
+  {
+    "type": "documentation",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 32,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 0,
+    "acceptedSelections": 0,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 3,
+    "modelLatencyMedianMs": 6019,
+    "promptTokensMedian": 1264,
+    "contextChars": 3614,
+    "factCount": 184,
+    "runs": [
+      {
+        "latencyMs": 10184,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "documentation",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1264,
+        "outputTokens": 150
+      },
+      {
+        "latencyMs": 5943,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "documentation",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1264,
+        "outputTokens": 150
+      },
+      {
+        "latencyMs": 6019,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "documentation",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1264,
+        "outputTokens": 150
+      }
+    ]
+  },
+  {
+    "type": "web app/dashboard",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 14,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 5347,
+    "promptTokensMedian": 1658,
+    "contextChars": 5299,
+    "factCount": 72,
+    "runs": [
+      {
+        "latencyMs": 8667,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "dashboard",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6"
+              ]
+            },
+            {
+              "label": "details",
+              "factIds": [
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12",
+                "f13",
+                "f14",
+                "f15",
+                "f16",
+                "f17",
+                "f18"
+              ]
+            },
+            {
+              "label": "actions",
+              "factIds": [
+                "f27"
+              ]
+            }
+          ],
+          "confidence": 0.98
+        },
+        "promptTokens": 1658,
+        "outputTokens": 149
+      },
+      {
+        "latencyMs": 5347,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "dashboard",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6"
+              ]
+            },
+            {
+              "label": "details",
+              "factIds": [
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12",
+                "f13",
+                "f14",
+                "f15",
+                "f16",
+                "f17",
+                "f18"
+              ]
+            },
+            {
+              "label": "actions",
+              "factIds": [
+                "f27"
+              ]
+            }
+          ],
+          "confidence": 0.98
+        },
+        "promptTokens": 1658,
+        "outputTokens": 149
+      },
+      {
+        "latencyMs": 4991,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "verified",
+        "final": {
+          "status": "ok",
+          "pageType": "dashboard",
+          "sections": [
+            {
+              "label": "summary",
+              "factIds": [
+                "f1",
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6"
+              ]
+            },
+            {
+              "label": "details",
+              "factIds": [
+                "f7",
+                "f8",
+                "f9",
+                "f10",
+                "f11",
+                "f12",
+                "f13",
+                "f14",
+                "f15",
+                "f16",
+                "f17",
+                "f18"
+              ]
+            },
+            {
+              "label": "actions",
+              "factIds": [
+                "f27"
+              ]
+            }
+          ],
+          "confidence": 0.98
+        },
+        "promptTokens": 1658,
+        "outputTokens": 149
+      }
+    ]
+  },
+  {
+    "type": "login/form",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 15,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 0,
+    "acceptedSelections": 0,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 3,
+    "modelLatencyMedianMs": 5710,
+    "promptTokensMedian": 1551,
+    "contextChars": 4096,
+    "factCount": 65,
+    "runs": [
+      {
+        "latencyMs": 7203,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "form",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1551,
+        "outputTokens": 150
+      },
+      {
+        "latencyMs": 4659,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "form",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1551,
+        "outputTokens": 150
+      },
+      {
+        "latencyMs": 5710,
+        "rawJSONValid": false,
+        "accepted": false,
+        "reason": "invalid_json",
+        "final": {
+          "status": "ok",
+          "pageType": "form",
+          "sections": [
+            {
+              "label": "identity",
+              "factIds": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8",
+                "f9"
+              ]
+            }
+          ],
+          "confidence": 0.7
+        },
+        "promptTokens": 1551,
+        "outputTokens": 150
+      }
+    ]
+  },
+  {
+    "type": "messy JS-heavy site",
+    "coverageAccuracy": 0,
+    "extractLatencyMs": 831,
+    "snapshotJSONValidity": 100,
+    "snapshotStability": 100,
+    "rawModelJSONValidity": 100,
+    "acceptedSelections": 3,
+    "semanticAPIValidity": 100,
+    "semanticAPIStability": 100,
+    "hallucinatedFields": 0,
+    "rejectedOutputs": 0,
+    "modelLatencyMedianMs": 0,
+    "promptTokensMedian": 0,
+    "contextChars": 189,
+    "factCount": 1,
+    "runs": [
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "latencyMs": 0,
+        "rawJSONValid": true,
+        "accepted": true,
+        "reason": "deterministic_insufficient_evidence",
+        "final": {
+          "status": "insufficient_evidence",
+          "pageType": null,
+          "sections": []
+        },
+        "promptTokens": 0,
+        "outputTokens": 0
+      }
+    ]
+  }
+]

@@ -160,7 +160,7 @@ final class AddressAutocomplete: NSObject {
             DispatchQueue.main.async {
                 guard let self, self.pendingQuery == text else { return } // текст змінився — відкидаємо
                 let remote = list.prefix(6).map {
-                    Suggestion(display: $0, subtitle: "Пошук · \(engineKey)", kind: .remote,
+                    Suggestion(display: $0, subtitle: "Search · \(engineKey)", kind: .remote,
                               url: nil, engineKey: engineKey)
                 }
                 self.suggestions += remote

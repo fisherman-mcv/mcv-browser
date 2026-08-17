@@ -1,0 +1,7 @@
+{
+  "manifest_version": 3,
+  "name": "MCV MV3 Lifecycle Probe",
+  "version": "1.0.0",
+  "permissions": ["storage", "tabs"],
+  "background": {"service_worker": "worker.js"}
+}

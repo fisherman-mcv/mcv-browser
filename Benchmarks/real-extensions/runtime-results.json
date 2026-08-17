@@ -1,0 +1,328 @@
+[
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "adguard",
+    "popupLoaded" : true,
+    "reason" : "script errors: Cannot be started: \ninnerStart@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/background.js:152181:28 | Error: This script should only be loaded in a browser extension.\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:162:20\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:150:12\n28467@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:152:3\n__webpack_require__@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:3487:35\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:3555:43\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:7635:3\nglobal code@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:7637:3",
+    "scriptErrors" : [
+      "Cannot be started: \ninnerStart@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/background.js:152181:28",
+      "Error: This script should only be loaded in a browser extension.\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:162:20\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:150:12\n28467@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:152:3\n__webpack_require__@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:3487:35\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:3555:43\n@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:7635:3\nglobal code@mcv-extension:\/\/44b23c28bd964df36d7037c66dd9c670\/pages\/post-install.js:7637:3"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "5.4.3.128"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "bitwarden",
+    "popupLoaded" : true,
+    "reason" : "script errors: ReferenceError: Can't find variable: importScripts\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:1510374\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:1508752\nreduce@[native code]\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:1508737\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:3254732\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:3326841\nglobal code@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:3326845",
+    "scriptErrors" : [
+      "ReferenceError: Can't find variable: importScripts\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:1510374\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:1508752\nreduce@[native code]\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:1508737\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:3254732\n@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:3326841\nglobal code@mcv-extension:\/\/485134cc51bc753475c6bdcee34b1f20\/background.js:2:3326845"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "2026.7.0"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "dark-reader",
+    "popupLoaded" : true,
+    "reason" : "script errors: undefined is not an object (evaluating 'trie.regexps')\ngetURLMatchesFromIndexedList@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:684:29\ngetSitesFixesFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1500:53\ngetDetectorHintsFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1775:39\ngetTabMessage@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:7015:42 | undefined is not an object (evaluating 'trie.regexps')\ngetURLMatchesFromIndexedList@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:684:29\ngetSitesFixesFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1500:53\ngetDetectorHintsFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1775:39\ngetTabMessage@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:7015:42",
+    "scriptErrors" : [
+      "undefined is not an object (evaluating 'trie.regexps')\ngetURLMatchesFromIndexedList@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:684:29\ngetSitesFixesFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1500:53\ngetDetectorHintsFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1775:39\ngetTabMessage@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:7015:42",
+      "undefined is not an object (evaluating 'trie.regexps')\ngetURLMatchesFromIndexedList@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:684:29\ngetSitesFixesFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1500:53\ngetDetectorHintsFor@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:1775:39\ngetTabMessage@mcv-extension:\/\/ed79f31a7625f69124118d3e565ac983\/background\/index.js:7015:42"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "4.9.129"
+  },
+  {
+    "apiFailures" : {
+      "scripting.executeScript" : 2
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "google-translate",
+    "popupLoaded" : true,
+    "reason" : "unsupported\/denied calls: scripting.executeScript",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "2.0.17"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "grammarly",
+    "popupLoaded" : true,
+    "reason" : "script errors: TypeError: undefined is not a function\n",
+    "scriptErrors" : [
+      "TypeError: undefined is not a function\n"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "14.1320.0"
+  },
+  {
+    "apiFailures" : {
+      "cookies.get" : 1,
+      "cookies.getAll" : 4,
+      "cookies.set" : 1
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "honey",
+    "popupLoaded" : true,
+    "reason" : "script errors: undefined is not an object (evaluating 'e.tabs')\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/h0.js:135:951500\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/:12:110 | \"undefined is not an object (evaluating 'e.tabs.filter'): SET ERROR: GET ALL ERROR\"\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/h0.js:135:941405\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/:12:42; unsupported\/denied calls: cookies.get, cookies.getAll, cookies.set",
+    "scriptErrors" : [
+      "undefined is not an object (evaluating 'e.tabs')\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/h0.js:135:951500\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/:12:110",
+      "\"undefined is not an object (evaluating 'e.tabs.filter'): SET ERROR: GET ALL ERROR\"\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/h0.js:135:941405\n@mcv-extension:\/\/dc0e71c2fa265444dd339ff7f7910ed8\/:12:42"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "19.4.0"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "json-viewer",
+    "reason" : "background\/content API and persistent storage executed without observed errors",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PASS",
+    "storageRoundTrip" : true,
+    "version" : "0.18.1"
+  },
+  {
+    "apiFailures" : {
+      "cookies.get" : 4
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "lastpass",
+    "popupLoaded" : true,
+    "reason" : "unsupported\/denied calls: cookies.get",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "4.155.0"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : false,
+    "extensionName" : "metamask",
+    "popupLoaded" : true,
+    "reason" : "content-world API did not initialize; storage round-trip failed",
+    "scriptErrors" : [
+      "Error: undefined is not an object (evaluating 'o.serviceWorker.state')\n@mcv-extension:\/\/21d3b58aa95b29efc8dd8e9918c0b5a9\/service-worker.js:14580:327900\n@mcv-extension:\/\/21d3b58aa95b29efc8dd8e9918c0b5a9\/service-worker.js:14580:327913\nglobal code@mcv-extension:\/\/21d3b58aa95b29efc8dd8e9918c0b5a9\/service-worker.js:14580:327917"
+    ],
+    "status" : "FAIL",
+    "storageRoundTrip" : false,
+    "version" : "13.43.0.0"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "momentum",
+    "reason" : "background\/content API and persistent storage executed without observed errors",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PASS",
+    "storageRoundTrip" : true,
+    "version" : "2.27.2"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "onepassword",
+    "popupLoaded" : true,
+    "reason" : "script errors: Failed to initialize core interface\niue@mcv-extension:\/\/cc7c40234e93d17641ca9b77a10bb1bf\/background\/background.js:84:1082 | undefined is not an object (evaluating 'n.savePasskeys')\n@user-script:100:5:12090",
+    "scriptErrors" : [
+      "Failed to initialize core interface\niue@mcv-extension:\/\/cc7c40234e93d17641ca9b77a10bb1bf\/background\/background.js:84:1082",
+      "undefined is not an object (evaluating 'n.savePasskeys')\n@user-script:100:5:12090"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "8.12.32.33"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "privacy-badger",
+    "popupLoaded" : true,
+    "reason" : "script errors: TypeError: undefined is not an object (evaluating 'utils.hasOwn(chrome.webRequest.OnResponseStartedOptions, 'EXTRA_HEADERS')')\nhasOwnProperty@[native code]\nstartListeners@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/heuristicblocking.js:582:19\nBadger@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/background.js:85:37\nmodule code@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/background.js:1486:44 | Can't find variable: badger\nregisterGoogleRedirectBypassRules@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/lib\/dnr\/utils.js:850:19\n@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/background.js:76:49",
+    "scriptErrors" : [
+      "TypeError: undefined is not an object (evaluating 'utils.hasOwn(chrome.webRequest.OnResponseStartedOptions, 'EXTRA_HEADERS')')\nhasOwnProperty@[native code]\nstartListeners@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/heuristicblocking.js:582:19\nBadger@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/background.js:85:37\nmodule code@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/background.js:1486:44",
+      "Can't find variable: badger\nregisterGoogleRedirectBypassRules@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/lib\/dnr\/utils.js:850:19\n@mcv-extension:\/\/34023daf3e3809ddaad00805f6d371cb\/js\/background.js:76:49"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "2026.8.7"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "react-devtools",
+    "popupLoaded" : true,
+    "reason" : "background\/content API and persistent storage executed without observed errors",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PASS",
+    "storageRoundTrip" : true,
+    "version" : "7.0.1"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "redux-devtools",
+    "popupLoaded" : true,
+    "reason" : "background\/content API and persistent storage executed without observed errors",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PASS",
+    "storageRoundTrip" : true,
+    "version" : "3.2.10"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "return-youtube-dislike",
+    "popupLoaded" : true,
+    "reason" : "background\/content API and persistent storage executed without observed errors",
+    "scriptErrors" : [
+
+    ],
+    "status" : "PASS",
+    "storageRoundTrip" : true,
+    "version" : "4.0.4"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "sponsorblock",
+    "popupLoaded" : true,
+    "reason" : "script errors: Can't find variable: chrome\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:5991\nreplace@[native code]\nt@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:5944\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:6701\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:15419\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:15233\nPromise@[native code]\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:14996 | undefined is not an object (evaluating 'r.default.config.showNewFeaturePopups')\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:15802",
+    "scriptErrors" : [
+      "Can't find variable: chrome\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:5991\nreplace@[native code]\nt@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:5944\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:6701\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:15419\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:15233\nPromise@[native code]\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:14996",
+      "undefined is not an object (evaluating 'r.default.config.showNewFeaturePopups')\n@mcv-extension:\/\/4887a5d50f1d2543b0e5bec42888c162\/js\/help.js:1:15802"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "6.1.6"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "todoist",
+    "popupLoaded" : true,
+    "reason" : "script errors: undefined is not an object (evaluating 'items.withDueToday')\n@mcv-extension:\/\/6ffbeffe3a08064c3bb287cdbe6a2167\/background.js:106:32\n@mcv-extension:\/\/6ffbeffe3a08064c3bb287cdbe6a2167\/:12:110",
+    "scriptErrors" : [
+      "undefined is not an object (evaluating 'items.withDueToday')\n@mcv-extension:\/\/6ffbeffe3a08064c3bb287cdbe6a2167\/background.js:106:32\n@mcv-extension:\/\/6ffbeffe3a08064c3bb287cdbe6a2167\/:12:110"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "12.21.9"
+  },
+  {
+    "apiFailures" : {
+      "DNR.skippedUnsupportedRule" : 5
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "ublock-origin-lite",
+    "popupLoaded" : true,
+    "reason" : "storage round-trip failed",
+    "scriptErrors" : [
+
+    ],
+    "status" : "FAIL",
+    "storageRoundTrip" : false,
+    "version" : "2026.812.1211"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "ublock-origin",
+    "popupLoaded" : true,
+    "reason" : "script errors: TypeError: undefined is not an object (evaluating 'thisArg[fnName]')\npromisifyNoFail@mcv-extension:\/\/f9a111ec4497d8475bf5b4a5d0e66a61\/js\/webext.js:26:23\nmodule code@mcv-extension:\/\/f9a111ec4497d8475bf5b4a5d0e66a61\/js\/webext.js:145:45",
+    "scriptErrors" : [
+      "TypeError: undefined is not an object (evaluating 'thisArg[fnName]')\npromisifyNoFail@mcv-extension:\/\/f9a111ec4497d8475bf5b4a5d0e66a61\/js\/webext.js:26:23\nmodule code@mcv-extension:\/\/f9a111ec4497d8475bf5b4a5d0e66a61\/js\/webext.js:145:45"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "1.73.0"
+  },
+  {
+    "apiFailures" : {
+
+    },
+    "backgroundAPI" : true,
+    "contentAPI" : true,
+    "extensionName" : "vimium",
+    "popupLoaded" : true,
+    "reason" : "script errors: null is not an object (evaluating 'response.isEnabledForUrl')\ncheckIfEnabledForUrl@user-script:182:436:29\nasync initializePreDomReady@user-script:182:419:29",
+    "scriptErrors" : [
+      "null is not an object (evaluating 'response.isEnabledForUrl')\ncheckIfEnabledForUrl@user-script:182:436:29\nasync initializePreDomReady@user-script:182:419:29"
+    ],
+    "status" : "PARTIAL",
+    "storageRoundTrip" : true,
+    "version" : "2.4.2"
+  }
+]

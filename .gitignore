@@ -2,3 +2,11 @@
 MCV Browser.app/
 MCV-Browser.dmg
 .DS_Store
+*.xcuserstate
+DerivedData/
+.swiftpm/
+Benchmarks/real-extensions/packages/*.crx
+Benchmarks/real-extensions/unpacked/
+Benchmarks/real-extensions/work/
+*.log
+dist/

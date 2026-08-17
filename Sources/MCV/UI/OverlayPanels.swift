@@ -1,14 +1,20 @@
 import AppKit
 
-/// Командна палітра (⌘E, тоглюється): поле вводу + живі підказки команд.
+/// Універсальний URL/search/command bar (⌘E або ⌘L) + живі підказки команд.
 /// ↑↓ — вибір, Tab — підставити, Enter — виконати, Esc — закрити.
 final class CommandPaletteView: NSView, NSTextFieldDelegate {
     var onSubmit: ((String) -> Void)?
     var onDismiss: (() -> Void)?
+    var onBack: (() -> Void)?
+    var onForward: (() -> Void)?
+    var onReload: (() -> Void)?
 
     private let glass = CardSurface(cornerRadius: 16, shadow: true)
     private let field = NSTextField()
     private let listStack = NSStackView()
+    private lazy var backButton = navigationButton("chevron.left", action: #selector(goBack))
+    private lazy var forwardButton = navigationButton("chevron.right", action: #selector(goForward))
+    private lazy var reloadButton = navigationButton("arrow.clockwise", action: #selector(reload))
     private var matches: [CommandDescriptor] = []
     private var selected = -1
 
@@ -18,7 +24,7 @@ final class CommandPaletteView: NSView, NSTextFieldDelegate {
         glass.translatesAutoresizingMaskIntoConstraints = false
         addSubview(glass)
 
-        field.placeholderString = "Команда…  (Tab — підставити, Enter — виконати)"
+        field.placeholderString = "URL, search, or command…"
         field.font = .monospacedSystemFont(ofSize: 16, weight: .regular)
         field.isBezeled = false
         field.drawsBackground = false
@@ -31,7 +37,15 @@ final class CommandPaletteView: NSView, NSTextFieldDelegate {
         listStack.alignment = .leading
         listStack.spacing = 3
 
-        let stack = NSStackView(views: [field, listStack])
+        let navigation = NSStackView(views: [backButton, forwardButton, reloadButton])
+        navigation.orientation = .horizontal
+        navigation.spacing = 2
+        let inputRow = NSStackView(views: [field, navigation])
+        inputRow.orientation = .horizontal
+        inputRow.alignment = .centerY
+        inputRow.spacing = 8
+
+        let stack = NSStackView(views: [inputRow, listStack])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 10
@@ -48,19 +62,57 @@ final class CommandPaletteView: NSView, NSTextFieldDelegate {
             stack.trailingAnchor.constraint(equalTo: glass.contentHost.trailingAnchor),
             stack.topAnchor.constraint(equalTo: glass.contentHost.topAnchor),
             stack.bottomAnchor.constraint(equalTo: glass.contentHost.bottomAnchor),
-            field.leadingAnchor.constraint(equalTo: stack.leadingAnchor, constant: 16),
-            field.trailingAnchor.constraint(equalTo: stack.trailingAnchor, constant: -16),
+            inputRow.leadingAnchor.constraint(equalTo: stack.leadingAnchor, constant: 16),
+            inputRow.trailingAnchor.constraint(equalTo: stack.trailingAnchor, constant: -16),
+            backButton.widthAnchor.constraint(equalToConstant: 26),
+            forwardButton.widthAnchor.constraint(equalToConstant: 26),
+            reloadButton.widthAnchor.constraint(equalToConstant: 26),
         ])
+        NotificationCenter.default.addObserver(self, selector: #selector(themeChanged),
+                                                name: .mcvThemeChanged, object: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("not supported") }
+    deinit { NotificationCenter.default.removeObserver(self) }
 
-    func present() {
-        isHidden = false
-        field.stringValue = ""
-        refresh("")
-        window?.makeFirstResponder(field)
+    @objc private func themeChanged() {
+        field.textColor = Theme.textPrimary
+        refresh(field.stringValue)
     }
+
+    func present(prefill: String = "") {
+        isHidden = false
+        field.stringValue = prefill
+        refresh(prefill)
+        window?.makeFirstResponder(field)
+        // Omnibox semantics: one Delete clears the complete current URL and
+        // typing immediately replaces it.
+        field.currentEditor()?.selectAll(nil)
+    }
+
+    func updateNavigation(canGoBack: Bool, canGoForward: Bool, isLoading: Bool) {
+        backButton.isEnabled = canGoBack
+        forwardButton.isEnabled = canGoForward
+        reloadButton.image = NSImage(systemSymbolName: isLoading ? "xmark" : "arrow.clockwise",
+                                     accessibilityDescription: isLoading ? "Stop" : "Reload")
+        for button in [backButton, forwardButton, reloadButton] {
+            button.contentTintColor = button.isEnabled ? Theme.textSecondary : Theme.textSecondary.withAlphaComponent(0.28)
+        }
+    }
+
+    private func navigationButton(_ symbol: String, action: Selector) -> NSButton {
+        let button = NSButton(image: NSImage(systemSymbolName: symbol, accessibilityDescription: nil) ?? NSImage(),
+                              target: self, action: action)
+        button.isBordered = false
+        button.imageScaling = .scaleProportionallyDown
+        button.focusRingType = .none
+        button.toolTip = symbol == "chevron.left" ? "Back" : symbol == "chevron.right" ? "Forward" : "Reload"
+        return button
+    }
+
+    @objc private func goBack() { onBack?() }
+    @objc private func goForward() { onForward?() }
+    @objc private func reload() { onReload?() }
 
     func dismiss() {
         guard !isHidden else { return }
@@ -131,6 +183,7 @@ final class TabSwitcherView: NSView {
     var provider: (() -> (titles: [String], current: Int))?
 
     private let glass = CardSurface(cornerRadius: 16, shadow: true)
+    private let header = NSTextField(labelWithString: "Tabs   ↑↓ select · Enter open · w close · 1–9 · Esc")
     private let listStack = NSStackView()
     private var highlighted = 0
     private var count = 0
@@ -143,7 +196,6 @@ final class TabSwitcherView: NSView {
         glass.translatesAutoresizingMaskIntoConstraints = false
         addSubview(glass)
 
-        let header = NSTextField(labelWithString: "Вкладки   ↑↓ вибір · Enter перейти · w закрити · 1–9 · Esc")
         header.font = .systemFont(ofSize: 11, weight: .medium)
         header.textColor = Theme.textSecondary
 
@@ -169,9 +221,17 @@ final class TabSwitcherView: NSView {
             stack.topAnchor.constraint(equalTo: glass.contentHost.topAnchor),
             stack.bottomAnchor.constraint(equalTo: glass.contentHost.bottomAnchor),
         ])
+        NotificationCenter.default.addObserver(self, selector: #selector(themeChanged),
+                                                name: .mcvThemeChanged, object: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("not supported") }
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func themeChanged() {
+        header.textColor = Theme.textSecondary
+        if !isHidden, let data = provider?() { render(data) }
+    }
 
     func present() {
         guard let data = provider?() else { return }

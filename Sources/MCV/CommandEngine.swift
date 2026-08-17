@@ -31,6 +31,7 @@ protocol BrowserControlling: AnyObject {
     func reopenClosedTab()
     func showTabSwitcher()
     func applyTheme(dark: Bool)
+    func applyTheme(mode: String)
     func toggleMinimalMode()
     func activateReader()
     func showLocalPage(html: String)
@@ -56,9 +57,12 @@ protocol BrowserControlling: AnyObject {
     func togglePinCurrentTab()
     func openPrivateTab()
     func showLoadSpeed()
+    func showPerformanceStats()
     func clearHistory()
     func toggleDownloadsSidebar()
+    func toggleBookmarksSidebar()
     func toggleSidebarMode()
+    func runAI(_ command: String)
 }
 
 final class CommandEngine {
@@ -67,90 +71,93 @@ final class CommandEngine {
     // MARK: - Пошуковики (команда → базовий URL)
 
     static let searchEngines: [String: (base: String, help: String)] = [
-        "g": ("https://www.google.com/search?q=", "Пошук Google"),
-        "ddg": ("https://duckduckgo.com/?q=", "Пошук DuckDuckGo"),
-        "yt": ("https://www.youtube.com/results?search_query=", "Пошук YouTube"),
-        "wiki": ("https://uk.wikipedia.org/w/index.php?search=", "Пошук Wikipedia"),
-        "gh": ("https://github.com/search?q=", "Пошук GitHub"),
-        "so": ("https://stackoverflow.com/search?q=", "Пошук StackOverflow"),
-        "npm": ("https://www.npmjs.com/search?q=", "Пошук npm"),
-        "mdn": ("https://developer.mozilla.org/en-US/search?q=", "Пошук MDN"),
-        "img": ("https://www.google.com/search?tbm=isch&q=", "Пошук картинок"),
+        "g": ("https://www.google.com/search?q=", "Search Google"),
+        "ddg": ("https://duckduckgo.com/?q=", "Search DuckDuckGo"),
+        "yt": ("https://www.youtube.com/results?search_query=", "Search YouTube"),
+        "wiki": ("https://en.wikipedia.org/w/index.php?search=", "Search Wikipedia"),
+        "gh": ("https://github.com/search?q=", "Search GitHub"),
+        "so": ("https://stackoverflow.com/search?q=", "Search Stack Overflow"),
+        "npm": ("https://www.npmjs.com/search?q=", "Search npm"),
+        "mdn": ("https://developer.mozilla.org/en-US/search?q=", "Search MDN"),
+        "img": ("https://www.google.com/search?tbm=isch&q=", "Search images"),
         "maps": ("https://www.google.com/maps/search/", "Google Maps"),
     ]
 
     static let descriptors: [CommandDescriptor] = [
-        .init(name: "open", usage: "open <url>", help: "Відкрити сторінку"),
-        .init(name: "reload", usage: "reload", help: "Перезавантажити сторінку"),
-        .init(name: "back", usage: "back", help: "Назад"),
-        .init(name: "forward", usage: "forward", help: "Вперед"),
-        .init(name: "home", usage: "home", help: "Домашня сторінка"),
-        .init(name: "new", usage: "new [url]", help: "Нова вкладка"),
-        .init(name: "close", usage: "close", help: "Закрити вкладку"),
-        .init(name: "only", usage: "only", help: "Закрити всі інші вкладки"),
-        .init(name: "reopen", usage: "reopen", help: "Відновити закриту вкладку (⇧⌘T)"),
-        .init(name: "dup", usage: "dup", help: "Дублювати вкладку"),
-        .init(name: "pin", usage: "pin", help: "Закріпити/відкріпити вкладку"),
-        .init(name: "private", usage: "private [url]", help: "Приватна вкладка (без збереження історії/кук)"),
-        .init(name: "tabs", usage: "tabs", help: "Список вкладок (⌘P)"),
-        .init(name: "tab", usage: "tab <n>", help: "Перейти на вкладку n (⌘1–9)"),
-        .init(name: "next", usage: "next", help: "Наступна вкладка (⇧⌘])"),
-        .init(name: "prev", usage: "prev", help: "Попередня вкладка (⇧⌘[)"),
+        .init(name: "open", usage: "open <url>", help: "Open a page"),
+        .init(name: "reload", usage: "reload", help: "Reload the page"),
+        .init(name: "back", usage: "back", help: "Go back"),
+        .init(name: "forward", usage: "forward", help: "Go forward"),
+        .init(name: "home", usage: "home", help: "Open the home page"),
+        .init(name: "new", usage: "new [url]", help: "Open a new tab"),
+        .init(name: "close", usage: "close", help: "Close the current tab"),
+        .init(name: "only", usage: "only", help: "Close all other tabs"),
+        .init(name: "reopen", usage: "reopen", help: "Reopen the last closed tab (⇧⌘T)"),
+        .init(name: "dup", usage: "dup", help: "Duplicate the current tab"),
+        .init(name: "pin", usage: "pin", help: "Pin or unpin the current tab"),
+        .init(name: "private", usage: "private [url]", help: "Open a private tab without persistent history or cookies"),
+        .init(name: "tabs", usage: "tabs", help: "Show the tab switcher (⌘P)"),
+        .init(name: "tab", usage: "tab <n>", help: "Switch to tab n (⌘1–9)"),
+        .init(name: "next", usage: "next", help: "Switch to the next tab (⇧⌘])"),
+        .init(name: "prev", usage: "prev", help: "Switch to the previous tab (⇧⌘[)"),
     ] + searchEngines
         .sorted { $0.key < $1.key }
-        .map { .init(name: $0.key, usage: "\($0.key) <запит>", help: $0.value.help) }
+        .map { .init(name: $0.key, usage: "\($0.key) <query>", help: $0.value.help) }
     + [
-        .init(name: "find", usage: "find <текст>", help: "Пошук на сторінці (⌘F, повтор — далі)"),
-        .init(name: "zoom", usage: "zoom in|out|reset|<50-300>", help: "Масштаб сторінки"),
-        .init(name: "reader", usage: "reader", help: "Режим читання (⇧⌘R)"),
-        .init(name: "src", usage: "src", help: "Показати HTML-джерело сторінки"),
-        .init(name: "hist", usage: "hist [clear]", help: "Глобальна історія переглядів"),
-        .init(name: "speed", usage: "speed", help: "Час завантаження поточної сторінки"),
-        .init(name: "print", usage: "print", help: "Друк сторінки"),
-        .init(name: "pdf", usage: "pdf", help: "Зберегти сторінку як PDF у Downloads"),
-        .init(name: "shot", usage: "shot", help: "Скріншот сторінки → Downloads"),
-        .init(name: "qr", usage: "qr", help: "QR-код поточної адреси"),
-        .init(name: "downloads", usage: "downloads", help: "Бічна панель завантажень"),
-        .init(name: "top", usage: "top", help: "Прокрутити вгору"),
-        .init(name: "bottom", usage: "bottom", help: "Прокрутити вниз"),
-        .init(name: "copyurl", usage: "copyurl", help: "Скопіювати адресу"),
-        .init(name: "copytitle", usage: "copytitle", help: "Скопіювати заголовок"),
-        .init(name: "bm", usage: "bm [add|rm|назва]", help: "Закладки: bm add — додати, bm — список"),
-        .init(name: "calc", usage: "calc <вираз>", help: "Калькулятор"),
-        .init(name: "tran", usage: "tran <текст>", help: "Переклад"),
-        .init(name: "uuid", usage: "uuid", help: "Згенерувати UUID"),
-        .init(name: "rand", usage: "rand [n]", help: "Випадкове число 1…n"),
-        .init(name: "pass", usage: "pass [довжина]", help: "Згенерувати надійний пароль"),
-        .init(name: "b64", usage: "b64 <текст>", help: "Base64 encode"),
-        .init(name: "b64d", usage: "b64d <текст>", help: "Base64 decode"),
-        .init(name: "hex", usage: "hex <число|0x…>", help: "Десяткове ↔ шістнадцяткове"),
-        .init(name: "bin", usage: "bin <число|0b…>", help: "Десяткове ↔ двійкове"),
-        .init(name: "len", usage: "len <текст>", help: "Кількість символів і слів"),
-        .init(name: "lorem", usage: "lorem [n]", help: "Lorem ipsum на n слів"),
-        .init(name: "color", usage: "color <#hex>", help: "Показати колір"),
-        .init(name: "date", usage: "date", help: "Поточна дата й час"),
-        .init(name: "ip", usage: "ip", help: "Ваша зовнішня IP-адреса"),
-        .init(name: "dark", usage: "dark", help: "Темна тема"),
-        .init(name: "light", usage: "light", help: "Світла тема"),
-        .init(name: "opacity", usage: "opacity <30-100>", help: "Прозорість вікна"),
-        .init(name: "minimal", usage: "minimal", help: "Компактний режим (⌘M)"),
-        .init(name: "sidebar", usage: "sidebar on|off", help: "Ультрамінімальний sidebar із фавіконками"),
-        .init(name: "fullscreen", usage: "fullscreen", help: "Повний екран"),
-        .init(name: "float", usage: "float", help: "Вікно поверх усіх (перемикач)"),
-        .init(name: "mode", usage: "mode classic|safe|secure", help: "Режим безпеки"),
-        .init(name: "js", usage: "js on|off", help: "Увімкнути/вимкнути JavaScript"),
-        .init(name: "ua", usage: "ua <рядок>|reset", help: "Змінити User-Agent"),
-        .init(name: "clear", usage: "clear", help: "Очистити кукі, кеш і дані сайтів"),
-        .init(name: "restore", usage: "restore", help: "Відновити минулу сесію"),
-        .init(name: "alias", usage: "alias <ключ> <команда>", help: "Створити скорочення"),
-        .init(name: "unalias", usage: "unalias <ключ>", help: "Видалити скорочення"),
-        .init(name: "help", usage: "help", help: "Довідка"),
-        .init(name: "quit", usage: "quit", help: "Вийти з MCV"),
+        .init(name: "find", usage: "find <text>", help: "Find on page (⌘F; repeat for next match)"),
+        .init(name: "zoom", usage: "zoom in|out|reset|<50-300>", help: "Change page zoom"),
+        .init(name: "reader", usage: "reader", help: "Open Reader Mode (⇧⌘R)"),
+        .init(name: "src", usage: "src", help: "Show the page HTML source"),
+        .init(name: "hist", usage: "hist [clear]", help: "Show global browsing history"),
+        .init(name: "speed", usage: "speed", help: "Show the current page load time"),
+        .init(name: "perf", usage: "perf", help: "Show live MCV performance counters"),
+        .init(name: "print", usage: "print", help: "Print the page"),
+        .init(name: "pdf", usage: "pdf", help: "Save the page as a PDF in Downloads"),
+        .init(name: "shot", usage: "shot", help: "Save a page screenshot in Downloads"),
+        .init(name: "qr", usage: "qr", help: "Create a QR code for the current address"),
+        .init(name: "downloads", usage: "downloads", help: "Toggle the Downloads sidebar"),
+        .init(name: "top", usage: "top", help: "Scroll to the top"),
+        .init(name: "bottom", usage: "bottom", help: "Scroll to the bottom"),
+        .init(name: "copyurl", usage: "copyurl", help: "Copy the current address"),
+        .init(name: "copytitle", usage: "copytitle", help: "Copy the page title"),
+        .init(name: "bm", usage: "bm [add|rm|name]", help: "Bookmarks: bm add to add; bm to list"),
+        .init(name: "calc", usage: "calc <expression>", help: "Calculator"),
+        .init(name: "tran", usage: "tran <text>", help: "Translate text"),
+        .init(name: "uuid", usage: "uuid", help: "Generate a UUID"),
+        .init(name: "rand", usage: "rand [n]", help: "Generate a random number from 1 to n"),
+        .init(name: "pass", usage: "pass [length]", help: "Generate a secure password"),
+        .init(name: "b64", usage: "b64 <text>", help: "Encode Base64"),
+        .init(name: "b64d", usage: "b64d <text>", help: "Decode Base64"),
+        .init(name: "hex", usage: "hex <number|0x…>", help: "Convert decimal and hexadecimal"),
+        .init(name: "bin", usage: "bin <number|0b…>", help: "Convert decimal and binary"),
+        .init(name: "len", usage: "len <text>", help: "Count characters and words"),
+        .init(name: "lorem", usage: "lorem [n]", help: "Generate n words of Lorem ipsum"),
+        .init(name: "color", usage: "color <#hex>", help: "Preview a color"),
+        .init(name: "date", usage: "date", help: "Show the current date and time"),
+        .init(name: "ip", usage: "ip", help: "Show your public IP address"),
+        .init(name: "dark", usage: "dark", help: "Use the dark theme"),
+        .init(name: "light", usage: "light", help: "Use the light theme"),
+        .init(name: "system", usage: "system", help: "Follow the macOS appearance"),
+        .init(name: "opacity", usage: "opacity <30-100>", help: "Change window opacity"),
+        .init(name: "minimal", usage: "minimal", help: "Toggle Minimal Mode (⇧⌘M)"),
+        .init(name: "sidebar", usage: "sidebar on|off", help: "Toggle the favicon-only sidebar"),
+        .init(name: "fullscreen", usage: "fullscreen", help: "Toggle full screen"),
+        .init(name: "float", usage: "float", help: "Toggle always-on-top mode"),
+        .init(name: "mode", usage: "mode classic|safe|secure", help: "Change the security mode"),
+        .init(name: "js", usage: "js on|off", help: "Enable or disable JavaScript"),
+        .init(name: "ua", usage: "ua <string>|reset", help: "Change the User-Agent"),
+        .init(name: "clear", usage: "clear", help: "Clear cookies, cache, and website data"),
+        .init(name: "restore", usage: "restore", help: "Restore the previous session"),
+        .init(name: "ai", usage: "ai <page|ui|api|research|memory|tabs|focus|scam|debug|ask|status>", help: "Local semantic browser powered by Gemma 3 1B"),
+        .init(name: "alias", usage: "alias <key> <command>", help: "Create a command alias"),
+        .init(name: "unalias", usage: "unalias <key>", help: "Remove a command alias"),
+        .init(name: "help", usage: "help", help: "Show help"),
+        .init(name: "quit", usage: "quit", help: "Quit MCV"),
     ]
 
     // MARK: - Виконання
 
-    /// preferNewTab — навігація йде в нову вкладку (використовує Mini MCV).
+    /// preferNewTab — навігація йде в нову вкладку замість поточної.
     func execute(_ raw: String, preferNewTab: Bool = false) {
         var input = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
@@ -180,7 +187,7 @@ final class CommandEngine {
             if let url = Self.url(from: arg) {
                 browser?.navigate(to: url, newTab: preferNewTab)
             } else {
-                browser?.toast("open: некоректний URL")
+                browser?.toast("open: invalid URL")
             }
         case "reload": browser?.reloadPage()
         case "back": browser?.goBack()
@@ -207,7 +214,7 @@ final class CommandEngine {
         case "tabs": browser?.showTabSwitcher()
         case "tab":
             if let n = Int(arg), n >= 1 { browser?.selectTab(index: n - 1) }
-            else { browser?.toast("tab <номер>") }
+            else { browser?.toast("tab <number>") }
         case "next": browser?.nextTab()
         case "prev": browser?.previousTab()
 
@@ -223,6 +230,7 @@ final class CommandEngine {
                 browser?.showHistoryPage()
             }
         case "speed": browser?.showLoadSpeed()
+        case "perf": browser?.showPerformanceStats()
         case "print": browser?.printPage()
         case "pdf": browser?.exportPDF()
         case "shot": browser?.snapshotPage()
@@ -232,10 +240,10 @@ final class CommandEngine {
         case "bottom": browser?.scrollToBottom()
         case "copyurl", "cu":
             if let url = browser?.currentURL?.absoluteString { copyToast(url) }
-            else { browser?.toast("Немає сторінки") }
+            else { browser?.toast("No active page") }
         case "copytitle", "ct":
             if let title = browser?.currentTitle { copyToast(title) }
-            else { browser?.toast("Немає сторінки") }
+            else { browser?.toast("No active page") }
 
         // --- Закладки ---
         case "bm": handleBookmarks(arg)
@@ -245,10 +253,10 @@ final class CommandEngine {
             if let value = Calculator.evaluate(arg) {
                 copyToast(Self.format(value), prefix: "= ")
             } else {
-                browser?.toast("calc: помилка у виразі")
+                browser?.toast("calc: invalid expression")
             }
         case "tran":
-            guard !arg.isEmpty else { browser?.toast("tran <текст>"); return }
+            guard !arg.isEmpty else { browser?.toast("tran <text>"); return }
             switch Translator.translate(arg, target: ConfigStore.shared.config.translateTarget) {
             case .text(let translated): browser?.toast("→ \(translated)")
             case .url(let url): browser?.navigate(to: url, newTab: true)
@@ -261,13 +269,13 @@ final class CommandEngine {
             let length = min(64, max(6, Int(arg) ?? 20))
             copyToast(Self.generatePassword(length: length))
         case "b64":
-            guard !arg.isEmpty else { browser?.toast("b64 <текст>"); return }
+            guard !arg.isEmpty else { browser?.toast("b64 <text>"); return }
             copyToast(Data(arg.utf8).base64EncodedString())
         case "b64d":
             if let data = Data(base64Encoded: arg), let text = String(data: data, encoding: .utf8) {
                 copyToast(text)
             } else {
-                browser?.toast("b64d: некоректний base64")
+                browser?.toast("b64d: invalid Base64")
             }
         case "hex":
             if arg.lowercased().hasPrefix("0x"), let v = Int(arg.dropFirst(2), radix: 16) {
@@ -275,7 +283,7 @@ final class CommandEngine {
             } else if let v = Int(arg) {
                 copyToast("0x" + String(v, radix: 16))
             } else {
-                browser?.toast("hex <число|0x…>")
+                browser?.toast("hex <number|0x…>")
             }
         case "bin":
             if arg.lowercased().hasPrefix("0b"), let v = Int(arg.dropFirst(2), radix: 2) {
@@ -283,12 +291,12 @@ final class CommandEngine {
             } else if let v = Int(arg) {
                 copyToast("0b" + String(v, radix: 2))
             } else {
-                browser?.toast("bin <число|0b…>")
+                browser?.toast("bin <number|0b…>")
             }
         case "len":
-            guard !arg.isEmpty else { browser?.toast("len <текст>"); return }
+            guard !arg.isEmpty else { browser?.toast("len <text>"); return }
             let words = arg.split(whereSeparator: { $0.isWhitespace }).count
-            browser?.toast("Символів: \(arg.count) · слів: \(words)")
+            browser?.toast("Characters: \(arg.count) · words: \(words)")
         case "lorem":
             let count = min(500, max(1, Int(arg) ?? 30))
             copyToast(Self.lorem(count), prefix: "")
@@ -296,7 +304,7 @@ final class CommandEngine {
             handleColor(arg)
         case "date":
             let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "uk_UA")
+            formatter.locale = Locale(identifier: "en_US")
             formatter.dateFormat = "EEEE, d MMMM yyyy · HH:mm:ss"
             browser?.toast(formatter.string(from: Date()))
         case "ip":
@@ -305,6 +313,7 @@ final class CommandEngine {
         // --- Вигляд ---
         case "dark": browser?.applyTheme(dark: true)
         case "light": browser?.applyTheme(dark: false)
+        case "system": browser?.applyTheme(mode: "system")
         case "opacity":
             if let pct = Int(arg), (30...100).contains(pct) {
                 browser?.setWindowOpacity(Double(pct) / 100)
@@ -325,8 +334,8 @@ final class CommandEngine {
         case "mode":
             if let m = SecurityMode(rawValue: arg.lowercased()) {
                 SecurityManager.shared.setMode(m)
-                let extra = m == .secure ? " — нові вкладки повністю ізольовані" : ""
-                browser?.toast("Режим: \(m.label)\(extra)")
+                let extra = m == .secure ? " — new tabs are fully isolated" : ""
+                browser?.toast("Mode: \(m.label)\(extra)")
             } else {
                 browser?.toast("mode classic|safe|secure")
             }
@@ -334,30 +343,31 @@ final class CommandEngine {
             switch arg.lowercased() {
             case "on":
                 SecurityManager.shared.setJavaScript(true)
-                browser?.toast("JS увімкнено — перезавантажте сторінку")
+                browser?.toast("JavaScript enabled — reload the page")
             case "off":
                 SecurityManager.shared.setJavaScript(false)
-                browser?.toast("JS вимкнено — перезавантажте сторінку")
+                browser?.toast("JavaScript disabled — reload the page")
             default:
                 browser?.toast("js on|off")
             }
         case "ua":
-            if arg.isEmpty { browser?.toast("ua <рядок> або ua reset") }
+            if arg.isEmpty { browser?.toast("ua <string> or ua reset") }
             else if arg.lowercased() == "reset" { browser?.setUserAgent(nil) }
             else { browser?.setUserAgent(arg) }
         case "clear": browser?.clearBrowsingData()
 
         // --- Сесія / система ---
         case "restore": browser?.restoreLastSession()
+        case "ai": browser?.runAI(arg)
         case "alias":
             let sub = arg.split(separator: " ", maxSplits: 1).map(String.init)
             if sub.isEmpty {
                 let list = ConfigStore.shared.config.aliases
                     .map { "\($0.key) → \($0.value)" }.sorted().joined(separator: "   ")
-                browser?.toast(list.isEmpty ? "Немає alias'ів" : list)
+                browser?.toast(list.isEmpty ? "No aliases" : list)
             } else if sub.count == 1 {
                 let existing = ConfigStore.shared.config.aliases[sub[0]]
-                browser?.toast(existing.map { "\(sub[0]) → \($0)" } ?? "alias «\(sub[0])» не знайдено")
+                browser?.toast(existing.map { "\(sub[0]) → \($0)" } ?? "Alias “\(sub[0])” was not found")
             } else {
                 ConfigStore.shared.update { $0.aliases[sub[0]] = sub[1] }
                 browser?.toast("alias: \(sub[0]) → \(sub[1])")
@@ -403,7 +413,7 @@ final class CommandEngine {
 
         if parts.isEmpty {
             if bookmarks.isEmpty {
-                browser?.toast("Закладок немає — bm add [назва]")
+                browser?.toast("No bookmarks — use bm add [name]")
             } else {
                 browser?.showLocalPage(html: Self.bookmarksHTML(bookmarks))
             }
@@ -413,23 +423,23 @@ final class CommandEngine {
         switch parts[0] {
         case "add":
             guard let url = browser?.currentURL?.absoluteString else {
-                browser?.toast("Немає сторінки для закладки")
+                browser?.toast("No page to bookmark")
                 return
             }
             let name = parts.count > 1 ? parts[1] : (browser?.currentTitle ?? url)
             ConfigStore.shared.update { $0.bookmarks[name] = url }
             browser?.toast("★ \(name)")
         case "rm":
-            guard parts.count > 1 else { browser?.toast("bm rm <назва>"); return }
+            guard parts.count > 1 else { browser?.toast("bm rm <name>"); return }
             ConfigStore.shared.update { $0.bookmarks.removeValue(forKey: parts[1]) }
-            browser?.toast("Закладку видалено: \(parts[1])")
+            browser?.toast("Bookmark removed: \(parts[1])")
         default:
             let exact = bookmarks[arg]
             let byPrefix = bookmarks.first { $0.key.lowercased().hasPrefix(arg.lowercased()) }?.value
             if let target = exact ?? byPrefix, let url = URL(string: target) {
                 browser?.navigate(to: url, newTab: false)
             } else {
-                browser?.toast("Закладку не знайдено: \(arg)")
+                browser?.toast("Bookmark not found: \(arg)")
             }
         }
     }
@@ -437,7 +447,7 @@ final class CommandEngine {
     private func handleColor(_ arg: String) {
         var hex = arg.hasPrefix("#") ? String(arg.dropFirst()) : arg
         guard (3...8).contains(hex.count), hex.allSatisfy({ $0.isHexDigit }) else {
-            browser?.toast("color <#hex>  напр. color #ff6600")
+            browser?.toast("color <#hex>, for example: color #ff6600")
             return
         }
         hex = "#" + hex
@@ -458,14 +468,14 @@ final class CommandEngine {
                 if let data, let ip = String(data: data, encoding: .utf8), !ip.isEmpty {
                     self?.copyToast(ip, prefix: "IP: ")
                 } else {
-                    self?.browser?.toast("IP: помилка мережі")
+                    self?.browser?.toast("IP: network error")
                 }
             }
         }.resume()
     }
 
     private func search(_ base: String, _ query: String, _ newTab: Bool) {
-        guard !query.isEmpty else { browser?.toast("Порожній запит"); return }
+        guard !query.isEmpty else { browser?.toast("Empty query"); return }
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
         if let url = URL(string: base + encoded) {
             browser?.navigate(to: url, newTab: newTab)
@@ -476,7 +486,7 @@ final class CommandEngine {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
         let display = value.count > 80 ? String(value.prefix(80)) + "…" : value
-        browser?.toast("\(prefix)\(display)  (скопійовано)")
+        browser?.toast("\(prefix)\(display)  (copied)")
     }
 
     // MARK: - Хелпери
@@ -534,11 +544,11 @@ final class CommandEngine {
             "<tr><td>★</td><td><a href=\"\(url)\">\(name)</a></td><td class=\"tagline\">\(url)</td></tr>"
         }.joined()
         let body = """
-        <h1>Закладки</h1>
-        <p class="tagline">bm add [назва] — додати · bm rm &lt;назва&gt; — видалити · bm &lt;назва&gt; — відкрити</p>
+        <h1>Bookmarks</h1>
+        <p class="tagline">bm add [name] — add · bm rm &lt;name&gt; — remove · bm &lt;name&gt; — open</p>
         <table>\(rows)</table>
         """
-        return localPage(title: "MCV — Закладки", body: body)
+        return localPage(title: "MCV — Bookmarks", body: body)
     }
 
     static func helpHTML() -> String {
@@ -551,11 +561,11 @@ final class CommandEngine {
             .joined()
         let body = """
         <h1>MCV Browser</h1>
-        <p class="tagline">Менше кліків — більше результату.</p>
-        <h2>Команди</h2><table>\(commandRows)</table>
-        <h2>Шорткати</h2><table>\(shortcutRows)</table>
-        <p class="tagline">Конфіг: <code>~/.mcv/config.json</code> · F Corp</p>
+        <p class="tagline">Fewer clicks. More done.</p>
+        <h2>Commands</h2><table>\(commandRows)</table>
+        <h2>Shortcuts</h2><table>\(shortcutRows)</table>
+        <p class="tagline">Config: <code>~/.mcv/config.json</code> · F Corp</p>
         """
-        return localPage(title: "MCV — Довідка", body: body)
+        return localPage(title: "MCV — Help", body: body)
     }
 }

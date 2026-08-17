@@ -15,7 +15,7 @@ final class ExecuteButton: NSButton {
         title = ""
         imagePosition = .imageOnly
         let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
-        image = NSImage(systemSymbolName: "arrow.right", accessibilityDescription: "Виконати")?
+        image = NSImage(systemSymbolName: "arrow.right", accessibilityDescription: "Run")?
             .withSymbolConfiguration(config)
         image?.isTemplate = true
         contentTintColor = .white

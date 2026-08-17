@@ -1,6 +1,12 @@
 import AppKit
 import WebKit
 import CoreImage
+import Darwin.Mach
+
+private final class FloatingVideoPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
 
 /// Головне вікно: скляний chrome (вкладки + командний рядок) поверх
 /// напівпрозорого фону, webview — «карткою» зі скругленими кутами.
@@ -13,6 +19,9 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     private let commandField = NSTextField()
     private let statusLabel = NSTextField(labelWithString: "")
     private let webContainer = NSView()
+    private let blankNewTabView = NSVisualEffectView()
+    private let baseTint = NSView()
+    private var showingNativeBlank = false
     private let commandRow = NSView()
     private let palette = CommandPaletteView()
     private let switcher = TabSwitcherView()
@@ -27,14 +36,29 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     private var autocomplete: AddressAutocomplete!
     private var capsule: CardSurface!
     private let downloadsSidebar = DownloadsSidebarView()
+    private let bookmarksSidebar = BookmarksSidebarView()
     private var webTrailingToContent: NSLayoutConstraint!
     private var webTrailingToSidebar: NSLayoutConstraint!
     private var sidebarVisible = false
+    private var bookmarksSidebarVisible = false
 
     private let sidebarChrome = SidebarChromeView()
     private var sidebarMode = ConfigStore.shared.config.sidebarMode
     private var webLeadingToContent: NSLayoutConstraint!
     private var webLeadingToSidebarChrome: NSLayoutConstraint!
+    private var webLeadingToBookmarks: NSLayoutConstraint!
+    private var bookmarksLeadingToContent: NSLayoutConstraint!
+    private var bookmarksLeadingToSidebarChrome: NSLayoutConstraint!
+    private var pageLeadingConstraint: NSLayoutConstraint?
+    private var pageTrailingConstraint: NSLayoutConstraint?
+    private var pageBottomConstraint: NSLayoutConstraint?
+    private var pictureInPicturePanel: NSPanel?
+    private weak var pictureInPictureTab: BrowserTab?
+    private var pictureInPictureCloseObserver: NSObjectProtocol?
+    private weak var pictureInPicturePendingTab: BrowserTab?
+    private var pictureInPicturePlaceholder: NSImageView?
+    private var popupWindows: [ObjectIdentifier: (tab: BrowserTab, controller: NSWindowController, opener: ObjectIdentifier, observer: NSObjectProtocol)] = [:]
+    private var popupAttempts: [ObjectIdentifier: [Date]] = [:]
 
     override init() {
         window = NSWindow(
@@ -60,23 +84,27 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         buildUI()
         wireTabManager()
         wireSecurity()
+        NotificationCenter.default.addObserver(self, selector: #selector(applyInterfaceColors),
+                                                name: .mcvThemeChanged, object: nil)
     }
 
-    func start(homepage: String, restored: [URL] = []) {
-        if restored.isEmpty {
-            let url = CommandEngine.url(from: homepage)
-                ?? URL(string: homepage)
-                ?? URL(string: "https://duckduckgo.com")!
-            tabManager.newTab(url: url)
+    func start(homepage: String, restored: [URL] = [], pinned: [URL] = []) {
+        pinned.forEach { tabManager.newTab(url: $0, pinned: true) }
+        let pinnedSet = Set(pinned.map(\.absoluteString))
+        let normalTabs = restored.filter { !pinnedSet.contains($0.absoluteString) }
+        if pinned.isEmpty && normalTabs.isEmpty {
+            tabManager.newTab(url: nil)
         } else {
-            restored.forEach { tabManager.newTab(url: $0) }
+            normalTabs.forEach { tabManager.newTab(url: $0) }
             tabManager.select(at: 0)
         }
+        tabManager.restoreGroups()
         window.alphaValue = ConfigStore.shared.config.windowOpacity
         window.makeKeyAndOrderFront(nil)
         applyChromeVisibility()
         updateStatus()
-        focusCommand()
+        if tabManager.current?.logicalURL == nil { palette.present() }
+        else { focusCommand() }
     }
 
     // MARK: - UI construction
@@ -84,9 +112,13 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     private func buildUI() {
         guard let content = window.contentView else { return }
 
-        // Скляна основа всього вікна — Liquid Glass.
+        // Скляна основа всього вікна — Liquid Glass. .behindWindow напряму
+        // сканує робочий стіл (звідси колір шпалер крізь блюр) — усе, що
+        // сидить поверх (sidebar, downloads, tab bar у класичному режимі),
+        // лише додає ще блюру НАД цим кольором, тож нейтралізувати треба
+        // саме тут, в одному місці, а не в кожній дочірній панелі окремо.
         let base = NSVisualEffectView()
-        base.material = .sidebar
+        base.material = .hudWindow
         base.blendingMode = .behindWindow
         base.state = .active
         base.translatesAutoresizingMaskIntoConstraints = false
@@ -96,6 +128,17 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             base.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             base.topAnchor.constraint(equalTo: content.topAnchor),
             base.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+        ])
+
+        baseTint.wantsLayer = true
+        baseTint.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.85).cgColor
+        baseTint.translatesAutoresizingMaskIntoConstraints = false
+        base.addSubview(baseTint)
+        NSLayoutConstraint.activate([
+            baseTint.leadingAnchor.constraint(equalTo: base.leadingAnchor),
+            baseTint.trailingAnchor.constraint(equalTo: base.trailingAnchor),
+            baseTint.topAnchor.constraint(equalTo: base.topAnchor),
+            baseTint.bottomAnchor.constraint(equalTo: base.bottomAnchor),
         ])
 
         // Статус-чіп (SAFE · JS ON) — праворуч у ряду вкладок, поруч із "+".
@@ -112,7 +155,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         execute.target = self
         execute.action = #selector(commandSubmitted)
 
-        commandField.placeholderString = "Введіть команду або URL…"
+        commandField.placeholderString = "Enter a URL, search, or command…"
         commandField.font = Theme.Typo.command
         commandField.textColor = Theme.textPrimary
         commandField.isBezeled = false
@@ -153,7 +196,14 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
 
         tabBar.translatesAutoresizingMaskIntoConstraints = false
         webContainer.translatesAutoresizingMaskIntoConstraints = false
+        webContainer.wantsLayer = true
+        webContainer.layer?.backgroundColor = NSColor.clear.cgColor
         webContainer.setContentHuggingPriority(.init(1), for: .vertical)
+
+        blankNewTabView.material = .underWindowBackground
+        blankNewTabView.blendingMode = .withinWindow
+        blankNewTabView.state = .active
+        blankNewTabView.alphaValue = 0.16
 
         content.addSubview(tabBar)
         content.addSubview(commandRow)
@@ -192,19 +242,61 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         webLeadingToSidebarChrome = webContainer.leadingAnchor.constraint(equalTo: sidebarChrome.trailingAnchor)
         webLeadingToContent.isActive = true
 
-        sidebarChrome.onSelectTab = { [weak self] index in self?.tabManager.select(at: index) }
-        sidebarChrome.onCloseTab = { [weak self] index in self?.tabManager.close(at: index) }
+        sidebarChrome.onSelectTab = { [weak self] index in
+            self?.tabManager.select(at: index)
+            DispatchQueue.main.async { self?.focusWeb() }
+        }
+        sidebarChrome.onCloseTab = { [weak self] index in self?.tabManager.close(at: index, forcePinned: true) }
         sidebarChrome.onDuplicateTab = { [weak self] index in
             guard let self, self.tabManager.tabs.indices.contains(index) else { return }
-            self.tabManager.newTab(url: self.tabManager.tabs[index].webView.url)
+            self.tabManager.newTab(url: self.tabManager.tabs[index].logicalURL)
         }
         sidebarChrome.onTogglePin = { [weak self] index in
             guard let self else { return }
             self.tabManager.select(at: index)
             self.tabManager.togglePinCurrent()
         }
+        sidebarChrome.onMoveTab = { [weak self] source, destination in
+            self?.tabManager.moveTab(from: source, to: destination)
+        }
+        sidebarChrome.onGroupTabs = { [weak self] source, target in
+            guard let self else { return }
+            if self.tabManager.createGroup(from: source, with: target) == nil {
+                self.toast("Pinned and regular tabs cannot share a group")
+            }
+        }
+        sidebarChrome.onToggleGroup = { [weak self] id in self?.tabManager.toggleGroup(id) }
+        sidebarChrome.onCloseGroup = { [weak self] id in self?.tabManager.closeGroup(id) }
+        sidebarChrome.onHibernateGroup = { [weak self] id in
+            guard let self else { return }
+            self.toast("Group hibernated · \(self.tabManager.hibernateGroup(id)) tabs released")
+        }
+        sidebarChrome.onBookmarkGroup = { [weak self] id in
+            guard let self else { return }
+            self.toast("Bookmarked \(self.tabManager.bookmarkGroup(id)) tabs")
+        }
+        sidebarChrome.onColorGroup = { [weak self] id, color in self?.tabManager.setGroupColor(id, colorIndex: color) }
+        sidebarChrome.onUngroup = { [weak self] id in self?.tabManager.ungroup(id) }
+        sidebarChrome.onSpotlight = { [weak self] in self?.showCommandPalette() }
         sidebarChrome.onNewTab = { [weak self] in self?.openNewTab() }
         sidebarChrome.attachWindowControls(window)
+
+        bookmarksSidebar.translatesAutoresizingMaskIntoConstraints = false
+        bookmarksSidebar.isHidden = true
+        content.addSubview(bookmarksSidebar)
+        NSLayoutConstraint.activate([
+            bookmarksSidebar.topAnchor.constraint(equalTo: content.topAnchor),
+            bookmarksSidebar.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            bookmarksSidebar.widthAnchor.constraint(equalToConstant: 286),
+        ])
+        bookmarksLeadingToContent = bookmarksSidebar.leadingAnchor.constraint(equalTo: content.leadingAnchor)
+        bookmarksLeadingToSidebarChrome = bookmarksSidebar.leadingAnchor.constraint(equalTo: sidebarChrome.trailingAnchor)
+        bookmarksLeadingToContent.isActive = true
+        webLeadingToBookmarks = webContainer.leadingAnchor.constraint(equalTo: bookmarksSidebar.trailingAnchor)
+        bookmarksSidebar.onOpen = { [weak self] url in
+            self?.navigate(to: url, newTab: true)
+            self?.focusWeb()
+        }
 
         // Бічна панель завантажень (320px) — за замовчуванням прихована;
         // webContainer звужується під неї, коли панель відкрита.
@@ -239,6 +331,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             self?.focusWeb()
         }
         self.capsule = capsule
+        applyInterfaceColors()
 
         // Оверлеї
         for overlay in [palette, switcher] {
@@ -257,6 +350,13 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
 
         palette.onSubmit = { [weak self] text in self?.engine?.execute(text) }
         palette.onDismiss = { [weak self] in self?.focusWeb() }
+        palette.onBack = { [weak self] in self?.tabManager.current?.webView.goBack() }
+        palette.onForward = { [weak self] in self?.tabManager.current?.webView.goForward() }
+        palette.onReload = { [weak self] in
+            guard let webView = self?.tabManager.current?.webView else { return }
+            if webView.isLoading { webView.stopLoading() } else { webView.reload() }
+            self?.refreshPaletteNavigation()
+        }
         switcher.provider = { [weak self] in
             guard let self else { return (titles: [], current: 0) }
             return (
@@ -302,13 +402,34 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         tabManager.onContentChange = { [weak self] in
             self?.refreshTabsUI()
             self?.syncAddressField()
+            self?.refreshPaletteNavigation()
         }
         tabManager.onDownloadMessage = { [weak self] message in
             self?.toast(message)
             if message.hasPrefix("⬇"), self?.sidebarVisible == false { self?.toggleDownloadsSidebar() }
         }
-        tabBar.onSelect = { [weak self] index in self?.tabManager.select(at: index) }
+        tabManager.onPictureInPictureRequest = { [weak self] tab in self?.togglePictureInPicture(for: tab) }
+        tabManager.onPictureInPictureStop = { [weak self] tab in
+            self?.stopPictureInPicture(for: tab)
+            self?.closePopups(openedBy: tab)
+        }
+        tabManager.onPopupRequest = { [weak self] opener, configuration, action, features in
+            self?.openSmartPopup(opener: opener, configuration: configuration, action: action, features: features)
+        }
+        tabManager.onPopupCloseRequest = { [weak self] tab in self?.closePopup(tab) }
+        tabManager.onPageReady = { tab in AIBrowserEngine.shared.remember(tab) }
+        tabBar.onSelect = { [weak self] index in
+            self?.tabManager.select(at: index)
+            DispatchQueue.main.async { self?.focusWeb() }
+        }
         tabBar.onClose = { [weak self] index in self?.tabManager.close(at: index) }
+        tabBar.onMove = { [weak self] source, destination in self?.tabManager.moveTab(from: source, to: destination) }
+        tabBar.onGroup = { [weak self] source, target in
+            guard let self else { return }
+            if self.tabManager.createGroup(from: source, with: target) == nil {
+                self.toast("Pinned and regular tabs cannot share a group")
+            }
+        }
         tabBar.onNew = { [weak self] in self?.openNewTab() }
     }
 
@@ -330,13 +451,41 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             items: tabManager.tabs.map { ($0.displayTitle, $0.webView.isLoading) },
             current: tabManager.currentIndex
         )
-        sidebarChrome.reload(tabManager.tabs.enumerated().map { index, tab in
-            SidebarTabModel(
-                favicon: tab.favicon, isActive: index == tabManager.currentIndex,
-                isLoading: tab.webView.isLoading, isPinned: tab.isPinned,
-                isPlayingAudio: tab.isPlayingAudio, hasUnread: tab.hasUnreadActivity
-            )
-        })
+        var sidebarModels: [SidebarTabModel] = []
+        var emittedGroups = Set<UUID>()
+        let groupColors = ["#66D9EF", "#A78BFA", "#FB7185", "#FBBF24", "#34D399", "#60A5FA"].map { NSColor(hex: $0) }
+        for (index, tab) in tabManager.tabs.enumerated() {
+            if let group = tabManager.group(containing: tab.id) {
+                guard !emittedGroups.contains(group.id) else { continue }
+                emittedGroups.insert(group.id)
+                let members = tabManager.tabs.enumerated().filter { group.tabIDs.contains($0.element.id) }
+                let activeMember = members.first { $0.offset == tabManager.currentIndex }?.element ?? members.first?.element
+                sidebarModels.append(SidebarTabModel(
+                    tabIndex: members.first?.offset ?? index, favicon: activeMember?.favicon,
+                    isActive: members.contains { $0.offset == tabManager.currentIndex }, isLoading: false,
+                    isPinned: tab.isPinned, isPlayingAudio: members.contains { $0.element.isPlayingAudio },
+                    hasUnread: members.contains { $0.element.hasUnreadActivity }, groupID: group.id,
+                    groupTitle: group.title, groupCount: members.count,
+                    groupColor: group.colorIndex >= 0 ? groupColors[group.colorIndex % groupColors.count] : nil,
+                    isGroup: true))
+                if !group.isCollapsed {
+                    for member in members {
+                        let child = member.element
+                        sidebarModels.append(SidebarTabModel(
+                            tabIndex: member.offset, favicon: child.favicon,
+                            isActive: member.offset == tabManager.currentIndex, isLoading: child.webView.isLoading,
+                            isPinned: child.isPinned, isPlayingAudio: child.isPlayingAudio,
+                            hasUnread: child.hasUnreadActivity, groupID: group.id))
+                    }
+                }
+            } else {
+                sidebarModels.append(SidebarTabModel(
+                    tabIndex: index, favicon: tab.favicon, isActive: index == tabManager.currentIndex,
+                    isLoading: tab.webView.isLoading, isPinned: tab.isPinned,
+                    isPlayingAudio: tab.isPlayingAudio, hasUnread: tab.hasUnreadActivity))
+            }
+        }
+        sidebarChrome.reload(sidebarModels)
         if let current = tabManager.current {
             window.title = "MCV — \(current.displayTitle)"
         }
@@ -348,24 +497,264 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         autocomplete?.hide()
     }
 
+    private func refreshPaletteNavigation() {
+        guard let webView = tabManager.current?.webView else {
+            palette.updateNavigation(canGoBack: false, canGoForward: false, isLoading: false)
+            return
+        }
+        palette.updateNavigation(canGoBack: webView.canGoBack,
+                                 canGoForward: webView.canGoForward,
+                                 isLoading: webView.isLoading)
+    }
+
     private func attachCurrentWebView() {
         webContainer.subviews.forEach { $0.removeFromSuperview() }
-        guard let webView = tabManager.current?.webView else { return }
+        guard let current = tabManager.current else { return }
+        guard current.logicalURL != nil else {
+            // The desktop-colored .behindWindow material lives below baseTint.
+            // Lowering only that tint makes the native tab genuinely
+            // translucent instead of merely painting another dark shade.
+            showingNativeBlank = true
+            updateBaseTint()
+            blankNewTabView.translatesAutoresizingMaskIntoConstraints = false
+            webContainer.addSubview(blankNewTabView)
+            NSLayoutConstraint.activate([
+                blankNewTabView.leadingAnchor.constraint(equalTo: webContainer.leadingAnchor),
+                blankNewTabView.trailingAnchor.constraint(equalTo: webContainer.trailingAnchor),
+                blankNewTabView.topAnchor.constraint(equalTo: webContainer.topAnchor),
+                blankNewTabView.bottomAnchor.constraint(equalTo: webContainer.bottomAnchor),
+            ])
+            return
+        }
+        showingNativeBlank = false
+        updateBaseTint()
+        if current === pictureInPictureTab { stopPictureInPicture(for: current, reattach: false) }
+        let webView = current.webView
         webView.wantsLayer = true
-        webView.layer?.cornerRadius = 10
         webView.layer?.masksToBounds = true
         webView.translatesAutoresizingMaskIntoConstraints = false
         webContainer.addSubview(webView)
+        let leading = webView.leadingAnchor.constraint(equalTo: webContainer.leadingAnchor)
+        let trailing = webView.trailingAnchor.constraint(equalTo: webContainer.trailingAnchor)
+        let bottom = webView.bottomAnchor.constraint(equalTo: webContainer.bottomAnchor)
+        pageLeadingConstraint = leading
+        pageTrailingConstraint = trailing
+        pageBottomConstraint = bottom
         NSLayoutConstraint.activate([
-            // 12px — той самий відступ, що й у traffic lights від лівого краю
-            // sidebar'а ((36-12)/2), для гармонійного ритму по горизонталі.
-            webView.leadingAnchor.constraint(equalTo: webContainer.leadingAnchor, constant: 12),
-            webView.trailingAnchor.constraint(equalTo: webContainer.trailingAnchor, constant: -8),
+            leading,
+            trailing,
             webView.topAnchor.constraint(equalTo: webContainer.topAnchor),
-            webView.bottomAnchor.constraint(equalTo: webContainer.bottomAnchor, constant: -8),
+            bottom,
         ])
+        applyPageSurfaceStyle()
         syncAddressField()
         updateStatus()
+    }
+
+    func togglePictureInPicture(for tab: BrowserTab) {
+        if pictureInPictureTab === tab { stopPictureInPicture(for: tab); return }
+        guard pictureInPicturePendingTab == nil else { return }
+        if let existing = pictureInPictureTab { stopPictureInPicture(for: existing, reattach: false) }
+
+        pictureInPicturePendingTab = tab
+        let snapshot = WKSnapshotConfiguration()
+        snapshot.afterScreenUpdates = false
+        tab.webView.takeSnapshot(with: snapshot) { [weak self, weak tab] image, _ in
+            DispatchQueue.main.async {
+                guard let self, let tab, self.pictureInPicturePendingTab === tab else { return }
+                self.pictureInPicturePendingTab = nil
+                self.openPictureInPicturePanel(for: tab, pageSnapshot: image)
+            }
+        }
+    }
+
+    private func openPictureInPicturePanel(for tab: BrowserTab, pageSnapshot: NSImage?) {
+        if tabManager.current === tab, let pageSnapshot {
+            let placeholder = NSImageView(image: pageSnapshot)
+            placeholder.imageScaling = .scaleAxesIndependently
+            placeholder.translatesAutoresizingMaskIntoConstraints = false
+            webContainer.addSubview(placeholder)
+            NSLayoutConstraint.activate([
+                placeholder.leadingAnchor.constraint(equalTo: webContainer.leadingAnchor),
+                placeholder.trailingAnchor.constraint(equalTo: webContainer.trailingAnchor),
+                placeholder.topAnchor.constraint(equalTo: webContainer.topAnchor),
+                placeholder.bottomAnchor.constraint(equalTo: webContainer.bottomAnchor),
+            ])
+            pictureInPicturePlaceholder = placeholder
+        }
+
+        let panel = FloatingVideoPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 248),
+            styleMask: [.borderless, .resizable],
+            backing: .buffered,
+            defer: false)
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isReleasedWhenClosed = false
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.minSize = NSSize(width: 280, height: 158)
+        panel.maxSize = NSSize(width: 998, height: 528)
+        panel.isMovableByWindowBackground = true
+        panel.center()
+
+        let webView = tab.webView
+        webView.removeFromSuperview()
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        panel.contentView?.addSubview(webView)
+        if let content = panel.contentView {
+            content.wantsLayer = true
+            content.layer?.cornerRadius = 16
+            content.layer?.cornerCurve = .continuous
+            content.layer?.masksToBounds = true
+            content.layer?.borderWidth = 1
+            content.layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
+            webView.wantsLayer = true
+            webView.layer?.cornerRadius = 16
+            webView.layer?.cornerCurve = .continuous
+            webView.layer?.masksToBounds = true
+            NSLayoutConstraint.activate([
+                webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                webView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+                webView.topAnchor.constraint(equalTo: content.topAnchor),
+                webView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            ])
+        }
+        webView.evaluateJavaScript(Self.enterPictureInPicturePageJS)
+        pictureInPictureTab = tab
+        pictureInPicturePanel = panel
+        pictureInPictureCloseObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: panel, queue: .main
+        ) { [weak self, weak tab] _ in
+            guard let self, let tab else { return }
+            self.stopPictureInPicture(for: tab)
+        }
+        panel.orderFrontRegardless()
+    }
+
+    private func stopPictureInPicture(for tab: BrowserTab, reattach: Bool = true) {
+        guard pictureInPictureTab === tab else { return }
+        if let observer = pictureInPictureCloseObserver { NotificationCenter.default.removeObserver(observer) }
+        pictureInPictureCloseObserver = nil
+        tab.webView.evaluateJavaScript(Self.exitPictureInPicturePageJS)
+        tab.webView.removeFromSuperview()
+        pictureInPicturePlaceholder?.removeFromSuperview()
+        pictureInPicturePlaceholder = nil
+        pictureInPicturePanel?.orderOut(nil)
+        pictureInPicturePanel = nil
+        pictureInPictureTab = nil
+        if reattach, tabManager.current === tab { attachCurrentWebView() }
+    }
+
+    private static let enterPictureInPicturePageJS = #"""
+    (() => {
+      const videos = Array.from(document.querySelectorAll('video'));
+      videos.sort((a,b) => Number(a.paused)-Number(b.paused) || b.clientWidth*b.clientHeight-a.clientWidth*a.clientHeight);
+      const video = videos[0]; if (!video) return;
+      const surface = video.closest('#movie_player, .html5-video-player, .video-js, [data-player], [class*="video-player"]') || video.parentElement || video;
+      globalThis.__mcvNativePiP = {video, surface, surfaceStyle:surface.getAttribute('style'),
+        videoStyle:video.getAttribute('style'), controls:video.controls};
+      const set = (el,k,v) => el.style.setProperty(k,v,'important');
+      set(surface,'position','fixed');set(surface,'inset','0');set(surface,'width','100vw');set(surface,'height','100vh');
+      set(surface,'max-width','none');set(surface,'max-height','none');set(surface,'z-index','2147483647');
+      set(surface,'background','#000');set(surface,'margin','0');set(surface,'transform','none');
+      set(video,'width','100%');set(video,'height','100%');set(video,'max-width','none');set(video,'max-height','none');
+      set(video,'object-fit','contain');set(video,'background','#000');
+      if (surface === video || surface === video.parentElement) video.controls=true;
+      document.documentElement.style.setProperty('background','#000','important');
+      return true;
+    })()
+    """#
+
+    private static let exitPictureInPicturePageJS = #"""
+    (() => { const s=globalThis.__mcvNativePiP; if(!s?.video)return;
+      if(s.surfaceStyle==null)s.surface.removeAttribute('style');else s.surface.setAttribute('style',s.surfaceStyle);
+      if(s.videoStyle==null)s.video.removeAttribute('style');else s.video.setAttribute('style',s.videoStyle);
+      s.video.controls=s.controls;document.documentElement.style.removeProperty('background');
+      delete globalThis.__mcvNativePiP; })()
+    """#
+
+    private func openSmartPopup(opener: BrowserTab, configuration: WKWebViewConfiguration,
+                                action: WKNavigationAction, features: WKWindowFeatures) -> WKWebView? {
+        if let scheme = action.request.url?.scheme?.lowercased(), !["http", "https", "about"].contains(scheme) {
+            toast("Popup blocked: unsafe URL scheme")
+            return nil
+        }
+        let openerID = ObjectIdentifier(opener)
+        let cutoff = Date().addingTimeInterval(-30)
+        var attempts = (popupAttempts[openerID] ?? []).filter { $0 > cutoff }
+        guard attempts.count < 4 else { toast("Popup blocked: too many windows"); return nil }
+        attempts.append(Date()); popupAttempts[openerID] = attempts
+
+        configuration.preferences.isElementFullscreenEnabled = true
+        SecurityManager.shared.apply(to: configuration.userContentController)
+        let popupTab = BrowserTab(configuration: configuration, installUserContentHandlers: false)
+        let width = min(1000, max(320, features.width?.doubleValue ?? 520))
+        let height = min(800, max(240, features.height?.doubleValue ?? 640))
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+                            styleMask: [.titled, .closable, .resizable, .utilityWindow],
+                            backing: .buffered, defer: false)
+        panel.title = action.request.url?.host ?? "MCV Popup"
+        panel.isReleasedWhenClosed = false
+        panel.minSize = NSSize(width: 320, height: 240)
+        let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
+        panel.maxSize = NSSize(width: min(1000, screen.width), height: min(800, screen.height))
+        panel.center()
+        popupTab.webView.translatesAutoresizingMaskIntoConstraints = false
+        panel.contentView?.addSubview(popupTab.webView)
+        if let content = panel.contentView {
+            NSLayoutConstraint.activate([
+                popupTab.webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                popupTab.webView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+                popupTab.webView.topAnchor.constraint(equalTo: content.topAnchor),
+                popupTab.webView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            ])
+        }
+        popupTab.onUpdate = { [weak panel, weak popupTab] in panel?.title = popupTab?.displayTitle ?? "MCV Popup" }
+        popupTab.onRequestClose = { [weak self] tab in self?.closePopup(tab) }
+        popupTab.onRequestNewTab = { [weak self] url in self?.tabManager.newTab(url: url) }
+        popupTab.onRequestPopup = { [weak self] nestedOpener, nestedConfiguration, nestedAction, nestedFeatures in
+            self?.openSmartPopup(opener: nestedOpener, configuration: nestedConfiguration, action: nestedAction, features: nestedFeatures)
+        }
+        let controller = NSWindowController(window: panel)
+        let key = ObjectIdentifier(popupTab)
+        let observer = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification,
+                                                               object: panel, queue: .main) { [weak self, weak popupTab] _ in
+            if let popupTab { self?.closePopup(popupTab) }
+        }
+        popupWindows[key] = (popupTab, controller, openerID, observer)
+        window.addChildWindow(panel, ordered: .above)
+        panel.makeKeyAndOrderFront(nil)
+        return popupTab.webView
+    }
+
+    private func closePopup(_ tab: BrowserTab) {
+        let key = ObjectIdentifier(tab)
+        guard let popup = popupWindows.removeValue(forKey: key) else { return }
+        NotificationCenter.default.removeObserver(popup.observer)
+        if let popupWindow = popup.controller.window {
+            window.removeChildWindow(popupWindow)
+            popupWindow.orderOut(nil)
+        }
+        popup.tab.teardown()
+    }
+
+    private func closePopups(openedBy opener: BrowserTab) {
+        let openerID = ObjectIdentifier(opener)
+        let tabs = popupWindows.values.filter { $0.opener == openerID }.map(\.tab)
+        tabs.forEach(closePopup)
+        popupAttempts[openerID] = nil
+    }
+
+    /// Sidebar mode is true edge-to-edge content. The inset rounded "card"
+    /// remains exclusive to the classic chrome.
+    private func applyPageSurfaceStyle() {
+        let framed = !sidebarMode && !minimalMode
+        pageLeadingConstraint?.constant = framed ? 12 : 0
+        pageTrailingConstraint?.constant = framed ? -8 : 0
+        pageBottomConstraint?.constant = framed ? -8 : 0
+        tabManager.current?.webView.layer?.cornerRadius = framed ? 10 : 0
     }
 
     private func updateStatus() {
@@ -388,6 +777,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
 
     private func focusWeb() {
         if let webView = tabManager.current?.webView {
+            window.makeKey()
             _ = window.makeFirstResponder(webView)
         }
     }
@@ -437,7 +827,8 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             return
         }
         switcher.dismiss()
-        palette.present()
+        refreshPaletteNavigation()
+        palette.present(prefill: tabManager.current?.logicalURL?.absoluteString ?? "")
     }
 
     // MARK: - BrowserControlling: базове
@@ -450,6 +841,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             tabManager.newTab(url: url)
         } else {
             tabManager.current?.load(url)
+            attachCurrentWebView()
         }
         window.makeKeyAndOrderFront(nil)
     }
@@ -459,14 +851,47 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     func goForward() { tabManager.current?.webView.goForward() }
 
     func openNewTab() {
-        tabManager.newTab(url: tabManager.homepageURL)
-        focusCommand()
+        if !window.isVisible {
+            reopenWindowWithBlankTab()
+            return
+        }
+        tabManager.newTab(url: nil)
+        switcher.dismiss()
+        palette.present()
     }
 
-    func closeCurrentTab() { tabManager.close(at: tabManager.currentIndex) }
-    func selectTab(index: Int) { tabManager.select(at: index) }
-    func nextTab() { tabManager.selectRelative(1) }
-    func previousTab() { tabManager.selectRelative(-1) }
+    func reopenWindowWithBlankTab() {
+        tabManager.resetForNewWindow()
+        window.makeKeyAndOrderFront(nil)
+        applyChromeVisibility()
+        switcher.dismiss()
+        palette.present()
+    }
+
+    func closeCurrentTab() {
+        if tabManager.tabs.count == 1 {
+            if tabManager.current?.isPinned == true {
+                toast("Pinned tabs are protected — right-click to close or unpin first")
+            } else {
+                window.performClose(nil)
+            }
+            return
+        }
+        guard tabManager.close(at: tabManager.currentIndex) else {
+            if tabManager.current?.isPinned == true {
+                toast("Pinned tabs are protected — right-click to close or unpin first")
+            }
+            return
+        }
+        if tabManager.current?.logicalURL == nil {
+            switcher.dismiss()
+            palette.present()
+        }
+    }
+    func selectTab(index: Int) { tabManager.select(at: index); focusWeb() }
+    func selectTabShortcut(number: Int) { tabManager.selectShortcut(number); focusWeb() }
+    func nextTab() { tabManager.selectRelative(1); focusWeb() }
+    func previousTab() { tabManager.selectRelative(-1); focusWeb() }
 
     func duplicateTab() {
         if let url = currentURL {
@@ -478,12 +903,12 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
 
     func closeOtherTabs() {
         tabManager.closeOthers()
-        toast("Інші вкладки закрито")
+        toast("Other tabs closed")
     }
 
     func reopenClosedTab() {
         if !tabManager.reopenLast() {
-            toast("Немає закритих вкладок")
+            toast("No recently closed tabs")
         }
     }
 
@@ -498,16 +923,37 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     }
 
     func applyTheme(dark: Bool) {
-        NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        ConfigStore.shared.update { $0.theme = dark ? "dark" : "light" }
-        Theme.update(dark: dark)
-        toast(dark ? "Темна тема" : "Світла тема")
+        applyTheme(mode: dark ? "dark" : "light")
+    }
+
+    func applyTheme(mode: String) {
+        let normalized = ["dark", "light", "system"].contains(mode) ? mode : "system"
+        ConfigStore.shared.update { $0.theme = normalized }
+        Theme.apply(mode: normalized)
+        toast(normalized == "system" ? "System theme · follows macOS" : "\(normalized.capitalized) theme")
+    }
+
+    @objc private func applyInterfaceColors() {
+        commandField.textColor = Theme.textPrimary
+        statusLabel.textColor = Theme.textSecondary
+        toastLabel.textColor = Theme.textPrimary
+        updateBaseTint()
+    }
+
+    private func updateBaseTint() {
+        let color: NSColor
+        if Theme.isDark {
+            color = NSColor.black.withAlphaComponent(showingNativeBlank ? 0.30 : 0.85)
+        } else {
+            color = NSColor.white.withAlphaComponent(showingNativeBlank ? 0.20 : 0.68)
+        }
+        baseTint.layer?.backgroundColor = color.cgColor
     }
 
     func toggleMinimalMode() {
         minimalMode.toggle()
         applyChromeVisibility()
-        toast(minimalMode ? "Minimal mode — ⌘M щоб повернути" : "Повний інтерфейс")
+        toast(minimalMode ? "Minimal mode — press ⇧⌘M to exit" : "Full interface")
     }
 
     /// Тоглить ультрамінімальний sidebar (лише фавіконки + traffic lights
@@ -516,7 +962,12 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         sidebarMode.toggle()
         ConfigStore.shared.update { $0.sidebarMode = self.sidebarMode }
         applyChromeVisibility()
-        toast(sidebarMode ? "Sidebar mode — ⌘E для команд" : "Класична панель")
+        toast(sidebarMode ? "Sidebar mode — press ⌘E for the command bar" : "Classic toolbar")
+    }
+
+    func setSidebarMode(_ enabled: Bool) {
+        guard sidebarMode != enabled else { return }
+        toggleSidebarMode()
     }
 
     /// Єдина точка правди для видимості верхнього chrome / лівого sidebar:
@@ -531,8 +982,14 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
 
         let hideSidebar = !sidebarMode || minimalMode
         sidebarChrome.isHidden = hideSidebar
-        webLeadingToContent.isActive = hideSidebar
-        webLeadingToSidebarChrome.isActive = !hideSidebar
+        bookmarksSidebar.isHidden = !bookmarksSidebarVisible
+        let bookmarksFollowTabSidebar = bookmarksSidebarVisible && !hideSidebar
+        bookmarksLeadingToContent.isActive = !bookmarksFollowTabSidebar
+        bookmarksLeadingToSidebarChrome.isActive = bookmarksFollowTabSidebar
+        webLeadingToContent.isActive = hideSidebar && !bookmarksSidebarVisible
+        webLeadingToSidebarChrome.isActive = !hideSidebar && !bookmarksSidebarVisible
+        webLeadingToBookmarks.isActive = bookmarksSidebarVisible
+        applyPageSurfaceStyle()
 
         // Реальні traffic lights показуються лише в класичному режимі (без
         // sidebar і без minimal) — у sidebar-режимі їх заміняють власні
@@ -546,14 +1003,17 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     func activateReader() {
         tabManager.current?.webView.evaluateJavaScript(Reader.js) { [weak self] result, _ in
             if let status = result as? String, status == "no-content" {
-                self?.toast("Reader: статтю не знайдено")
+                self?.toast("Reader: no article found")
             }
         }
     }
 
     func showLocalPage(html: String) {
-        if tabManager.current == nil { tabManager.newTab(url: nil) }
-        tabManager.current?.webView.loadHTMLString(html, baseURL: nil)
+        // Internal tools must never replace the user's page—especially a
+        // pinned tab. `about:blank` gives the native tab a logical URL while
+        // keeping it out of session restore, then the local HTML replaces it.
+        let tab = tabManager.newTab(url: URL(string: "about:blank"))
+        tab.webView.loadHTMLString(html, baseURL: nil)
     }
 
     func toast(_ message: String) {
@@ -576,14 +1036,14 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     func findInPage(_ query: String) {
         guard let webView = tabManager.current?.webView else { return }
         let text = query.isEmpty ? lastFindQuery : query
-        guard !text.isEmpty else { toast("find <текст>"); return }
+        guard !text.isEmpty else { toast("find <text>"); return }
         lastFindQuery = text
         let config = WKFindConfiguration()
         config.wraps = true
         config.caseSensitive = false
         webView.find(text, configuration: config) { [weak self] result in
             if !result.matchFound {
-                self?.toast("«\(text)» не знайдено")
+                self?.toast("“\(text)” was not found")
             }
         }
     }
@@ -596,7 +1056,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         case .reset: webView.pageZoom = 1.0
         case .set(let value): webView.pageZoom = min(5.0, max(0.25, value))
         }
-        toast(String(format: "Масштаб: %.0f%%", webView.pageZoom * 100))
+        toast(String(format: "Zoom: %.0f%%", webView.pageZoom * 100))
     }
 
     func viewSource() {
@@ -604,7 +1064,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         let pageURL = webView.url?.absoluteString ?? ""
         webView.evaluateJavaScript("document.documentElement.outerHTML") { [weak self] result, _ in
             guard let self, let html = result as? String else {
-                self?.toast("Джерело недоступне")
+                self?.toast("Page source is unavailable")
                 return
             }
             let escaped = html
@@ -639,7 +1099,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
                 try? data.write(to: self.downloadsFile(name))
                 self.toast("PDF → Downloads/\(name)")
             case .failure:
-                self.toast("PDF: помилка")
+                self.toast("PDF export failed")
             }
         }
     }
@@ -651,7 +1111,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
                   let tiff = image.tiffRepresentation,
                   let rep = NSBitmapImageRep(data: tiff),
                   let png = rep.representation(using: .png, properties: [:]) else {
-                self?.toast("Скріншот: помилка")
+                self?.toast("Screenshot failed")
                 return
             }
             let name = "MCV-shot-\(Int(Date().timeIntervalSince1970)).png"
@@ -665,7 +1125,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
 
     func showQRCode() {
         guard let urlString = currentURL?.absoluteString else {
-            toast("Немає сторінки")
+            toast("No active page")
             return
         }
         guard let filter = CIFilter(name: "CIQRCodeGenerator") else { return }
@@ -696,12 +1156,12 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         for tab in tabManager.tabs {
             tab.webView.customUserAgent = ua ?? BrowserTab.defaultUA
         }
-        toast(ua == nil ? "UA: стандартний Safari" : "UA змінено — перезавантажте сторінку")
+        toast(ua == nil ? "UA: Safari default" : "UA changed — reload the page")
     }
 
     func showHistoryPage() {
         let entries = HistoryStore.shared.entries
-        guard !entries.isEmpty else { toast("Історія порожня"); return }
+        guard !entries.isEmpty else { toast("History is empty"); return }
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd.MM HH:mm"
         let rows = entries.prefix(500).map { entry -> String in
@@ -710,13 +1170,13 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
                 + "<td class=\"tagline\">\(entry.url)</td></tr>"
         }.joined()
         showLocalPage(html: CommandEngine.localPage(
-            title: "Історія",
-            body: "<h1>Історія</h1><p class=\"tagline\">hist clear — очистити</p><table>\(rows)</table>"))
+            title: "History",
+            body: "<h1>History</h1><p class=\"tagline\">hist clear — clear history</p><table>\(rows)</table>"))
     }
 
     func clearHistory() {
         HistoryStore.shared.clear()
-        toast("Історію переглядів очищено")
+        toast("Browsing history cleared")
     }
 
     func clearBrowsingData() {
@@ -724,7 +1184,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
             ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
             modifiedSince: .distantPast
         ) { [weak self] in
-            self?.toast("Кукі, кеш і дані сайтів очищено")
+            self?.toast("Cookies, cache, and website data cleared")
         }
     }
 
@@ -733,21 +1193,36 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     func togglePinCurrentTab() {
         tabManager.togglePinCurrent()
         let pinned = tabManager.current?.isPinned == true
-        toast(pinned ? "📌 Вкладку закріплено" : "Відкріплено")
+        toast(pinned ? "📌 Tab pinned" : "Tab unpinned")
     }
 
     func openPrivateTab() {
         tabManager.newTab(url: nil, ephemeral: true)
-        toast("🕶 Приватна вкладка — без історії та кук")
+        toast("🕶 Private tab — no history or persistent cookies")
         focusCommand()
     }
 
     func showLoadSpeed() {
         guard let duration = tabManager.current?.lastLoadDuration else {
-            toast("Немає даних про завантаження")
+            toast("No load timing available")
             return
         }
-        toast(String(format: "Завантажено за %.2f с", duration))
+        toast(String(format: "Loaded in %.2f s", duration))
+    }
+
+    func showPerformanceStats() {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info_data_t>.size / MemoryLayout<natural_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+        let memory = result == KERN_SUCCESS ? Double(info.resident_size) / 1_048_576 : 0
+        let ext = MCVExtensionRuntime.shared.performanceCounters()
+        toast(String(format: "PERF · %.0f MB · %d tabs (%d sleeping) · %d extension workers · %d alarms · %d popups",
+                     memory, tabManager.tabs.count, tabManager.hibernatedCount,
+                     ext.backgrounds, ext.alarms, ext.popups))
     }
 
     func toggleDownloadsSidebar() {
@@ -757,13 +1232,19 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         webTrailingToSidebar.isActive = sidebarVisible
     }
 
+    func toggleBookmarksSidebar() {
+        bookmarksSidebarVisible.toggle()
+        if bookmarksSidebarVisible { bookmarksSidebar.reload(focus: true) }
+        applyChromeVisibility()
+    }
+
     // MARK: - BrowserControlling: вікно
 
     func setWindowOpacity(_ value: Double) {
         let clamped = min(1.0, max(0.3, value))
         window.alphaValue = clamped
         ConfigStore.shared.update { $0.windowOpacity = clamped }
-        toast(String(format: "Прозорість вікна: %.0f%%", clamped * 100))
+        toast(String(format: "Window opacity: %.0f%%", clamped * 100))
     }
 
     func toggleFullscreen() {
@@ -773,7 +1254,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     func toggleFloatOnTop() {
         let floating = window.level != .floating
         window.level = floating ? .floating : .normal
-        toast(floating ? "Вікно поверх усіх — float щоб вимкнути" : "Звичайний рівень вікна")
+        toast(floating ? "Always on top — run float to disable" : "Normal window level")
     }
 
     func restoreLastSession() {
@@ -782,7 +1263,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         guard let data = try? Data(contentsOf: file),
               let urls = try? JSONDecoder().decode([String].self, from: data),
               !urls.isEmpty else {
-            toast("Немає збереженої сесії")
+            toast("No saved session")
             return
         }
         var restored = 0
@@ -792,7 +1273,23 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
                 restored += 1
             }
         }
-        toast("Відновлено вкладок: \(restored)")
+        toast("Restored tabs: \(restored)")
+    }
+
+    func runAI(_ command: String) {
+        let lower = command.lowercased()
+        let scopedTabs: [BrowserTab]
+        if lower.hasPrefix("research"), !lower.hasPrefix("research all"),
+           let current = tabManager.current, let group = tabManager.group(containing: current.id) {
+            scopedTabs = tabManager.tabs.filter { group.tabIDs.contains($0.id) }
+        } else {
+            scopedTabs = tabManager.tabs
+        }
+        AIBrowserEngine.shared.run(command, current: tabManager.current, tabs: scopedTabs,
+            show: { [weak self] html in
+                self?.showLocalPage(html: html)
+            },
+            toast: { [weak self] message in self?.toast(message) })
     }
 
     // MARK: - Private
@@ -812,4 +1309,50 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         }
         return String(String(cleaned).prefix(40))
     }
+}
+
+// MARK: - Native extension host
+
+extension BrowserWindowController: MCVExtensionHost {
+    func extensionTabs() -> [[String: Any]] {
+        tabManager.tabs.enumerated().map { index, tab in
+            ["id": index, "index": index, "windowId": 1,
+             "active": index == tabManager.currentIndex, "highlighted": index == tabManager.currentIndex,
+             "pinned": tab.isPinned, "incognito": tab.isPrivate,
+             "title": tab.displayTitle, "url": tab.logicalURL?.absoluteString ?? "",
+             "status": tab.webView.isLoading ? "loading" : "complete"]
+        }
+    }
+
+    func extensionCreateTab(url: URL?, active: Bool) -> Int {
+        let previous = tabManager.currentIndex
+        _ = tabManager.newTab(url: url ?? tabManager.homepageURL)
+        let created = tabManager.currentIndex
+        if !active, previous >= 0 { tabManager.select(at: previous) }
+        return created
+    }
+
+    func extensionUpdateTab(id: Int, url: URL?, active: Bool?) -> Bool {
+        let target = id < 0 ? tabManager.currentIndex : id
+        guard tabManager.tabs.indices.contains(target) else { return false }
+        if let url {
+            tabManager.tabs[target].load(url)
+            if target == tabManager.currentIndex { attachCurrentWebView() }
+        }
+        if active == true { tabManager.select(at: target) }
+        return true
+    }
+
+    func extensionRemoveTabs(ids: [Int]) {
+        for id in ids.sorted(by: >) where tabManager.tabs.indices.contains(id) { tabManager.close(at: id) }
+    }
+
+    func extensionWebView(tabID: Int?) -> WKWebView? {
+        guard let tabID else { return tabManager.current?.webView }
+        guard tabManager.tabs.indices.contains(tabID) else { return nil }
+        tabManager.tabs[tabID].wakeIfNeeded()
+        return tabManager.tabs[tabID].webView
+    }
+
+    func extensionOpenPage(_ url: URL, title: String) { navigate(to: url, newTab: true) }
 }

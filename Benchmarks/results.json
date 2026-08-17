@@ -1,0 +1,662 @@
+[
+  {
+    "type": "Wikipedia/article",
+    "url": "https://en.wikipedia.org/wiki/Alan_Turing",
+    "title": "Alan Turing - Wikipedia",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 62,
+    "snapshotStability": 100,
+    "jsonValidity": 0,
+    "modelStability": 0,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 6497,
+    "promptTokensMedian": 2034,
+    "contextChars": 36156,
+    "loadMs": 4395,
+    "runs": [
+      {
+        "latencyMs": 7454,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 2034,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 6497,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 2034,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 6470,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 2034,
+        "outputTokens": 180
+      }
+    ]
+  },
+  {
+    "type": "Amazon/product",
+    "url": "https://www.amazon.com/dp/B0D3J7HS89",
+    "title": "Page Not Found",
+    "coverageAccuracy": 33,
+    "extractLatencyMs": 10,
+    "snapshotStability": 100,
+    "jsonValidity": 100,
+    "modelStability": 100,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 2841,
+    "promptTokensMedian": 148,
+    "contextChars": 401,
+    "loadMs": 4052,
+    "runs": [
+      {
+        "latencyMs": 2841,
+        "valid": true,
+        "parsed": {
+          "pageType": null,
+          "title": "Page Not Found",
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "search",
+              "value": null,
+              "evidence": null
+            }
+          ],
+          "confidence": null
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 148,
+        "outputTokens": 72
+      },
+      {
+        "latencyMs": 2831,
+        "valid": true,
+        "parsed": {
+          "pageType": null,
+          "title": "Page Not Found",
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "search",
+              "value": null,
+              "evidence": null
+            }
+          ],
+          "confidence": null
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 148,
+        "outputTokens": 72
+      },
+      {
+        "latencyMs": 2851,
+        "valid": true,
+        "parsed": {
+          "pageType": null,
+          "title": "Page Not Found",
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "search",
+              "value": null,
+              "evidence": null
+            }
+          ],
+          "confidence": null
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 148,
+        "outputTokens": 72
+      }
+    ]
+  },
+  {
+    "type": "YouTube/video",
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "title": "",
+    "coverageAccuracy": 0,
+    "extractLatencyMs": 23,
+    "snapshotStability": 100,
+    "jsonValidity": 67,
+    "modelStability": 50,
+    "hallucinatedFields": 1,
+    "checkedFields": 1,
+    "modelLatencyMedianMs": 3608,
+    "promptTokensMedian": 96,
+    "contextChars": 149,
+    "loadMs": 9116,
+    "runs": [
+      {
+        "latencyMs": null,
+        "valid": false,
+        "error": "'in <string>' requires string as left operand, not list",
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 0,
+        "outputTokens": 0,
+        "parsed": null
+      },
+      {
+        "latencyMs": 2348,
+        "valid": true,
+        "parsed": {
+          "pageType": "YouTube/video",
+          "title": [],
+          "primaryEntity": {
+            "name": null,
+            "id": null
+          },
+          "fields": [
+            {
+              "name": "snapshot_text",
+              "value": "null"
+            },
+            {
+              "name": "snapshots_count",
+              "value": null
+            },
+            {
+              "name": "confidence",
+              "value": null
+            }
+          ]
+        },
+        "hallucinations": 1,
+        "checkedFields": 1,
+        "promptTokens": 96,
+        "outputTokens": 55
+      },
+      {
+        "latencyMs": 4868,
+        "valid": true,
+        "parsed": {
+          "pageType": "YouTube/video",
+          "title": null,
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "url",
+              "value": null
+            },
+            {
+              "name": "title",
+              "value": null
+            },
+            {
+              "name": "description",
+              "value": null
+            },
+            {
+              "name": "text",
+              "value": null
+            },
+            {
+              "name": "headings",
+              "value": null
+            },
+            {
+              "name": "controls",
+              "value": null
+            },
+            {
+              "name": "structuredData",
+              "value": null
+            }
+          ]
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 96,
+        "outputTokens": 101
+      }
+    ]
+  },
+  {
+    "type": "GitHub/repository",
+    "url": "https://github.com/ollama/ollama",
+    "title": "GitHub - ollama/ollama: Get up and running with Kimi-K2.6, GLM-5.2, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models. · GitHub",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 34,
+    "snapshotStability": 100,
+    "jsonValidity": 0,
+    "modelStability": 0,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 9854,
+    "promptTokensMedian": 1956,
+    "contextChars": 25751,
+    "loadMs": 6156,
+    "runs": [
+      {
+        "latencyMs": 14202,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1956,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 9854,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1956,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 9618,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1956,
+        "outputTokens": 180
+      }
+    ]
+  },
+  {
+    "type": "Reddit/thread",
+    "url": "https://www.reddit.com/r/programming/comments/1io0hky/the_overuse_of_browser_engines_in_desktop/",
+    "title": "The overuse of browser engines in desktop applications : r/programming",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 47,
+    "snapshotStability": 100,
+    "jsonValidity": 100,
+    "modelStability": 100,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 6623,
+    "promptTokensMedian": 2245,
+    "contextChars": 46998,
+    "loadMs": 6011,
+    "runs": [
+      {
+        "latencyMs": 13226,
+        "valid": true,
+        "parsed": {
+          "pageType": "Reddit/thread",
+          "title": "The overuse of browser engines in desktop applications : r/programming",
+          "description": "",
+          "text": "Пропустить и перейти к основному содержимому The overuse of browser engines in desktop applications : r/programming Зарегистрироваться Войти Развернуть меню пользователя Перейти к programming r/programming • -2 г. wtdawson Открыть Поделиться",
+          "confidence": null
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 2245,
+        "outputTokens": 105
+      },
+      {
+        "latencyMs": 6328,
+        "valid": true,
+        "parsed": {
+          "pageType": "Reddit/thread",
+          "title": "The overuse of browser engines in desktop applications : r/programming",
+          "description": "",
+          "text": "Пропустить и перейти к основному содержимому The overuse of browser engines in desktop applications : r/programming Зарегистрироваться Войти Развернуть меню пользователя Перейти к programming r/programming • -2 г. wtdawson Открыть Поделиться",
+          "confidence": null
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 2245,
+        "outputTokens": 105
+      },
+      {
+        "latencyMs": 6623,
+        "valid": true,
+        "parsed": {
+          "pageType": "Reddit/thread",
+          "title": "The overuse of browser engines in desktop applications : r/programming",
+          "description": "",
+          "text": "Пропустить и перейти к основному содержимому The overuse of browser engines in desktop applications : r/programming Зарегистрироваться Войти Развернуть меню пользователя Перейти к programming r/programming • -2 г. wtdawson Открыть Поделиться",
+          "confidence": null
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 2245,
+        "outputTokens": 105
+      }
+    ]
+  },
+  {
+    "type": "news article",
+    "url": "https://help.bbc.com/hc/en-us/articles/39027623773331-What-types-of-news-content-will-be-available",
+    "title": "What types of news content will be available? – BBC Help",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 14,
+    "snapshotStability": 100,
+    "jsonValidity": 100,
+    "modelStability": 33,
+    "hallucinatedFields": 3,
+    "checkedFields": 3,
+    "modelLatencyMedianMs": 6566,
+    "promptTokensMedian": 639,
+    "contextChars": 3685,
+    "loadMs": 3253,
+    "runs": [
+      {
+        "latencyMs": 8170,
+        "valid": true,
+        "parsed": {
+          "pageType": null,
+          "title": "What types of news content will be available? – BBC Help",
+          "primaryEntity": {
+            "name": null,
+            "value": null,
+            "evidence": null
+          },
+          "fields": [
+            {
+              "name": "type",
+              "value": "news article",
+              "evidence": null
+            }
+          ]
+        },
+        "hallucinations": 1,
+        "checkedFields": 1,
+        "promptTokens": 639,
+        "outputTokens": 99
+      },
+      {
+        "latencyMs": 4017,
+        "valid": true,
+        "parsed": {
+          "pageType": "news article",
+          "title": null,
+          "primaryEntity": [],
+          "fields": [
+            {
+              "name": "content Type",
+              "value": "news",
+              "evidence": null
+            }
+          ]
+        },
+        "hallucinations": 1,
+        "checkedFields": 1,
+        "promptTokens": 639,
+        "outputTokens": 66
+      },
+      {
+        "latencyMs": 6566,
+        "valid": true,
+        "parsed": {
+          "pageType": null,
+          "title": "What types of news content will be available? – BBC Help",
+          "primaryEntity": {
+            "name": "BBC News",
+            "type": "Organization"
+          },
+          "fields": [
+            {
+              "name": "contentType",
+              "value": "news article",
+              "evidence": null
+            }
+          ]
+        },
+        "hallucinations": 1,
+        "checkedFields": 1,
+        "promptTokens": 639,
+        "outputTokens": 97
+      }
+    ]
+  },
+  {
+    "type": "documentation",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers",
+    "title": "Using Web Workers - Web APIs | MDN",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 38,
+    "snapshotStability": 100,
+    "jsonValidity": 0,
+    "modelStability": 0,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 10848,
+    "promptTokensMedian": 1314,
+    "contextChars": 34653,
+    "loadMs": 3900,
+    "runs": [
+      {
+        "latencyMs": 14861,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1314,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 10848,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1314,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 10695,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1314,
+        "outputTokens": 180
+      }
+    ]
+  },
+  {
+    "type": "web app/dashboard",
+    "url": "https://opsgrid.hirawat.in/",
+    "title": "OpsGrid — Unified Infrastructure Dashboard",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 27,
+    "snapshotStability": 100,
+    "jsonValidity": 0,
+    "modelStability": 0,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 10822,
+    "promptTokensMedian": 1011,
+    "contextChars": 4340,
+    "loadMs": 3979,
+    "runs": [
+      {
+        "latencyMs": 13672,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1011,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 10822,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1011,
+        "outputTokens": 180
+      },
+      {
+        "latencyMs": 10615,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 1011,
+        "outputTokens": 180
+      }
+    ]
+  },
+  {
+    "type": "login/form",
+    "url": "https://github.com/login",
+    "title": "Sign in to GitHub · GitHub",
+    "coverageAccuracy": 100,
+    "extractLatencyMs": 11,
+    "snapshotStability": 100,
+    "jsonValidity": 67,
+    "modelStability": 100,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 5836,
+    "promptTokensMedian": 357,
+    "contextChars": 1770,
+    "loadMs": 6323,
+    "runs": [
+      {
+        "latencyMs": 5836,
+        "valid": true,
+        "parsed": {
+          "pageType": "login",
+          "title": "Sign in to GitHub",
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "username_or_email",
+              "value": null,
+              "evidence": null
+            }
+          ]
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 357,
+        "outputTokens": 72
+      },
+      {
+        "latencyMs": 4467,
+        "valid": true,
+        "parsed": {
+          "pageType": "login",
+          "title": "Sign in to GitHub",
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "username_or_email",
+              "value": null,
+              "evidence": ""
+            }
+          ]
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 357,
+        "outputTokens": 72
+      },
+      {
+        "latencyMs": 10557,
+        "valid": false,
+        "parsed": null,
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 357,
+        "outputTokens": 180
+      }
+    ]
+  },
+  {
+    "type": "messy JS-heavy site",
+    "url": "https://www.cnn.com/",
+    "title": "",
+    "coverageAccuracy": 0,
+    "extractLatencyMs": 332,
+    "snapshotStability": 100,
+    "jsonValidity": 100,
+    "modelStability": 67,
+    "hallucinatedFields": 0,
+    "checkedFields": 0,
+    "modelLatencyMedianMs": 4260,
+    "promptTokensMedian": 98,
+    "contextChars": 149,
+    "loadMs": 7831,
+    "runs": [
+      {
+        "latencyMs": 6130,
+        "valid": true,
+        "parsed": {
+          "pageType": "About",
+          "title": null,
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "SNAPSHOT",
+              "value": null,
+              "evidence": null
+            },
+            {
+              "name": "messy JS-heavy site",
+              "value": null,
+              "evidence": true
+            }
+          ]
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 98,
+        "outputTokens": 96
+      },
+      {
+        "latencyMs": 4260,
+        "valid": true,
+        "parsed": {
+          "pageType": null,
+          "title": null,
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "messy JS-heavy site",
+              "value": null,
+              "evidence": null
+            }
+          ]
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 98,
+        "outputTokens": 68
+      },
+      {
+        "latencyMs": 4215,
+        "valid": true,
+        "parsed": {
+          "pageType": "About",
+          "title": null,
+          "primaryEntity": null,
+          "fields": [
+            {
+              "name": "SNAPSHOT",
+              "value": null,
+              "evidence": null
+            }
+          ]
+        },
+        "hallucinations": 0,
+        "checkedFields": 0,
+        "promptTokens": 98,
+        "outputTokens": 65
+      }
+    ]
+  }
+]

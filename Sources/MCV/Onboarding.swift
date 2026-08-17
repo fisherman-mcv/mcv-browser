@@ -1,5 +1,10 @@
 import AppKit
 
+/// Панель без рамки, що вміє ставати key window (інакше не прийме текст/клавіатуру).
+final class KeyPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+}
+
 /// Плаваюча картка без рамки вікна: перший запуск MCV — 5 кроків,
 /// анімовані переходи (fade + slide з overshoot), живий typewriter-демо
 /// командного рядка, дрейфуючі градієнтні плями на фоні. Завершується
@@ -90,20 +95,20 @@ private struct Step {
 
 private let steps: [Step] = [
     Step(eyebrow: "MCV BROWSER",
-         title: "Менше кліків.\nБільше результату.",
-         subtitle: "Командний браузер для тих, хто будує — не просто споживає."),
-    Step(eyebrow: "ЯДРО",
-         title: "Кожна дія — команда.",
-         subtitle: "⌘E відкриває палітру. g, ddg, calc, tran — і працюй, не відриваючи рук від клавіатури."),
-    Step(eyebrow: "ВИГЛЯД",
-         title: "Обери тему.",
-         subtitle: "Завжди можна змінити командою dark або light."),
-    Step(eyebrow: "БЕЗПЕКА",
-         title: "Обери режим захисту.",
-         subtitle: "Safe блокує трекери й рекламу. Secure — повна ізоляція, без кук і JS."),
-    Step(eyebrow: "ГОТОВО",
-         title: "Усе налаштовано.",
-         subtitle: "⌘E будь-де — команди. ⇧⌘S — sidebar лише з фавіконками. ⌥Space — Mini MCV поверх усього."),
+         title: "Fewer clicks.\nMore done.",
+         subtitle: "A command-driven browser for people who build, not just consume."),
+    Step(eyebrow: "CORE",
+         title: "Every action is a command.",
+         subtitle: "⌘E opens the universal bar. Try g, ddg, calc, or tran without leaving the keyboard."),
+    Step(eyebrow: "APPEARANCE",
+         title: "Choose your theme.",
+         subtitle: "You can switch at any time with the dark or light command."),
+    Step(eyebrow: "SECURITY",
+         title: "Choose your protection level.",
+         subtitle: "Safe blocks trackers and ads. Secure provides full isolation without cookies or JavaScript."),
+    Step(eyebrow: "READY",
+         title: "You're all set.",
+         subtitle: "Press ⌘E anywhere for URLs and commands. ⇧⌘S enables the favicon-only sidebar. ⌘M minimizes the window."),
 ]
 
 // MARK: - Основне полотно
@@ -118,7 +123,7 @@ final class OnboardingView: NSView {
     private let subtitleLabel = NSTextField(labelWithString: "")
     private let stageHost = NSView()
     private let dotsStack = NSStackView()
-    private let continueButton = PillButton(title: "Продовжити")
+    private let continueButton = PillButton(title: "Continue")
     private let skipButton = NSButton()
     private let backButton = NSButton()
     private var contentTopConstraint: NSLayoutConstraint!
@@ -184,12 +189,12 @@ final class OnboardingView: NSView {
             card.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -48),
         ])
 
-        skipButton.title = "Пропустити"
+        skipButton.title = "Skip"
         skipButton.isBordered = false
         skipButton.font = Theme.Typo.small
         skipButton.contentTintColor = Theme.textSecondary
         (skipButton.cell as? NSButtonCell)?.attributedTitle = NSAttributedString(
-            string: "Пропустити", attributes: [.foregroundColor: Theme.textSecondary, .font: Theme.Typo.small])
+            string: "Skip", attributes: [.foregroundColor: Theme.textSecondary, .font: Theme.Typo.small])
         skipButton.target = self
         skipButton.action = #selector(skipTapped)
         skipButton.translatesAutoresizingMaskIntoConstraints = false
@@ -289,7 +294,7 @@ final class OnboardingView: NSView {
         eyebrowLabel.stringValue = step.eyebrow
         titleLabel.stringValue = step.title
         subtitleLabel.stringValue = step.subtitle
-        continueButton.setTitle(index == steps.count - 1 ? "Почати" : "Продовжити")
+        continueButton.setTitle(index == steps.count - 1 ? "Get Started" : "Continue")
         backButton.isHidden = index == 0
         skipButton.isHidden = index == steps.count - 1
 
@@ -418,10 +423,10 @@ final class OnboardingView: NSView {
         host.orientation = .horizontal
         host.spacing = 12
         host.translatesAutoresizingMaskIntoConstraints = false
-        host.addArrangedSubview(makeChoiceCard(title: "🌙 Темна", selected: Theme.isDark) { [weak self] in
+        host.addArrangedSubview(makeChoiceCard(title: "🌙 Dark", selected: Theme.isDark) { [weak self] in
             self?.selectTheme(dark: true)
         })
-        host.addArrangedSubview(makeChoiceCard(title: "☀️ Світла", selected: !Theme.isDark) { [weak self] in
+        host.addArrangedSubview(makeChoiceCard(title: "☀️ Light", selected: !Theme.isDark) { [weak self] in
             self?.selectTheme(dark: false)
         })
         return host

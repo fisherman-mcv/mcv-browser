@@ -6,6 +6,7 @@ import AppKit
 final class TabChipView: NSView {
     var onSelect: (() -> Void)?
     var onClose: (() -> Void)?
+    var onDragEnded: ((NSPoint) -> Void)?
 
     private let titleLabel = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
@@ -35,7 +36,7 @@ final class TabChipView: NSView {
         closeButton.isBordered = false
         closeButton.wantsLayer = true
         let closeConfig = NSImage.SymbolConfiguration(pointSize: 9, weight: .bold)
-        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Закрити")?
+        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close")?
             .withSymbolConfiguration(closeConfig)
         closeButton.image?.isTemplate = true
         closeButton.contentTintColor = Theme.textSecondary
@@ -65,6 +66,7 @@ final class TabChipView: NSView {
 
         let click = NSClickGestureRecognizer(target: self, action: #selector(selfTapped))
         addGestureRecognizer(click)
+        addGestureRecognizer(NSPanGestureRecognizer(target: self, action: #selector(dragged(_:))))
 
         NotificationCenter.default.addObserver(self, selector: #selector(repaint),
                                                 name: .mcvThemeChanged, object: nil)
@@ -119,6 +121,15 @@ final class TabChipView: NSView {
 
     @objc private func selfTapped() { onSelect?() }
     @objc private func closeTapped() { onClose?() }
+    @objc private func dragged(_ recognizer: NSPanGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed: alphaValue = 0.55
+        case .ended:
+            alphaValue = 1
+            onDragEnded?(recognizer.location(in: nil))
+        default: alphaValue = 1
+        }
+    }
 }
 
 /// Панель вкладок: горизонтальний скрол чіпів + кнопка "+".
@@ -126,6 +137,8 @@ final class TabBarView: NSView {
     var onSelect: ((Int) -> Void)?
     var onClose: ((Int) -> Void)?
     var onNew: (() -> Void)?
+    var onMove: ((Int, Int) -> Void)?
+    var onGroup: ((Int, Int) -> Void)?
 
     private let scroll = NSScrollView()
     private let stack = NSStackView()
@@ -154,13 +167,13 @@ final class TabBarView: NSView {
         newButton.isBordered = false
         newButton.wantsLayer = true
         let plusConfig = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
-        newButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Нова вкладка")?
+        newButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "New Tab")?
             .withSymbolConfiguration(plusConfig)
         newButton.image?.isTemplate = true
         newButton.contentTintColor = Theme.textSecondary
         newButton.target = self
         newButton.action = #selector(newTapped)
-        newButton.toolTip = "Нова вкладка (⌘T)"
+        newButton.toolTip = "New Tab (⌘T)"
         newButton.translatesAutoresizingMaskIntoConstraints = false
 
         addSubview(scroll)
@@ -189,6 +202,21 @@ final class TabBarView: NSView {
             chip.configure(title: item.title, isActive: index == current, isLoading: item.loading)
             chip.onSelect = { [weak self] in self?.onSelect?(index) }
             chip.onClose = { [weak self] in self?.onClose?(index) }
+            chip.onDragEnded = { [weak self] point in
+                guard let self else { return }
+                let local = self.stack.convert(point, from: nil)
+                let target = self.stack.arrangedSubviews.enumerated().min {
+                    abs($0.element.frame.midX - local.x) < abs($1.element.frame.midX - local.x)
+                }?.offset
+                if let target {
+                    let targetView = self.stack.arrangedSubviews[target]
+                    if abs(targetView.frame.midX - local.x) < min(34, targetView.frame.width * 0.25), target != index {
+                        self.onGroup?(index, target)
+                    } else {
+                        self.onMove?(index, target)
+                    }
+                }
+            }
             stack.addArrangedSubview(chip)
         }
     }

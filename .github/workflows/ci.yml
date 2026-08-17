@@ -1,0 +1,24 @@
+name: macOS verification
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: mcv-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Debug build
+        run: swift build
+      - name: Tests
+        run: swift test --skip SmartPopupTests
+      - name: Release app
+        run: make app
+      - name: Verify bundle signature
+        run: codesign --verify --deep --strict "MCV Browser.app"

@@ -18,11 +18,10 @@
   "shortcuts": {
     "commandPalette": "cmd+e",
     "tabSwitcher": "cmd+p",
-    "minimalMode": "cmd+m",
+    "minimalMode": "cmd+shift+m",
     "newTab": "cmd+t",
     "closeTab": "cmd+w",
     "reload": "cmd+r",
-    "focusAddress": "cmd+l",
-    "miniMCV": "alt+space"
+    "focusAddress": "cmd+l"
   }
 }

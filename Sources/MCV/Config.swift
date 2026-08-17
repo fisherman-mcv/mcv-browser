@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let mcvConfigChanged = Notification.Name("MCVConfigChanged")
+}
+
 /// Конфігурація MCV. Зберігається у ~/.mcv/config.json.
 struct MCVConfig: Codable {
     var theme: String
@@ -12,14 +16,16 @@ struct MCVConfig: Codable {
     var restoreSession: Bool
     var sidebarMode: Bool
     var hasCompletedOnboarding: Bool
+    var semanticMemory: Bool
     var aliases: [String: String]
     var bookmarks: [String: String]
+    var bookmarkFolders: [String]
     var shortcuts: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case theme, mode, javascript, homepage, searchEngine, translateTarget,
-             windowOpacity, restoreSession, sidebarMode, hasCompletedOnboarding,
-             aliases, bookmarks, shortcuts
+             windowOpacity, restoreSession, sidebarMode, hasCompletedOnboarding, semanticMemory,
+             aliases, bookmarks, bookmarkFolders, shortcuts
     }
 
     static let standard = MCVConfig(
@@ -33,19 +39,21 @@ struct MCVConfig: Codable {
         restoreSession: true,
         sidebarMode: false,
         hasCompletedOnboarding: false,
+        semanticMemory: true,
         aliases: [
             "hn": "open news.ycombinator.com",
         ],
         bookmarks: [:],
+        bookmarkFolders: [],
         shortcuts: [
             "commandPalette": "cmd+e",
-            "tabSwitcher": "cmd+p",
-            "minimalMode": "cmd+m",
+            "tabSwitcher": "cmd+shift+p",
+            "minimalMode": "cmd+shift+m",
             "newTab": "cmd+t",
             "closeTab": "cmd+w",
             "reload": "cmd+r",
             "focusAddress": "cmd+l",
-            "miniMCV": "alt+space",
+            "pinTab": "cmd+p",
         ]
     )
 }
@@ -66,11 +74,19 @@ extension MCVConfig {
         restoreSession = (try? c.decode(Bool.self, forKey: .restoreSession)) ?? d.restoreSession
         sidebarMode = (try? c.decode(Bool.self, forKey: .sidebarMode)) ?? d.sidebarMode
         hasCompletedOnboarding = (try? c.decode(Bool.self, forKey: .hasCompletedOnboarding)) ?? d.hasCompletedOnboarding
+        semanticMemory = (try? c.decode(Bool.self, forKey: .semanticMemory)) ?? d.semanticMemory
         aliases = (try? c.decode([String: String].self, forKey: .aliases)) ?? d.aliases
         bookmarks = (try? c.decode([String: String].self, forKey: .bookmarks)) ?? d.bookmarks
+        bookmarkFolders = (try? c.decode([String].self, forKey: .bookmarkFolders)) ?? d.bookmarkFolders
         var merged = d.shortcuts
         if let user = try? c.decode([String: String].self, forKey: .shortcuts) {
             for (k, v) in user { merged[k] = v }
+        }
+        // Migrate the short-lived binding where ⌘D pinned a tab and ⌘P opened
+        // the switcher. ⌘D is the conventional bookmark action again.
+        if merged["pinTab"] == "cmd+d", merged["tabSwitcher"] == "cmd+p" {
+            merged["pinTab"] = "cmd+p"
+            merged["tabSwitcher"] = "cmd+shift+p"
         }
         shortcuts = merged
     }
@@ -100,6 +116,7 @@ final class ConfigStore {
     func update(_ mutate: (inout MCVConfig) -> Void) {
         mutate(&config)
         save()
+        NotificationCenter.default.post(name: .mcvConfigChanged, object: self)
     }
 
     private func save() {

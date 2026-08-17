@@ -63,8 +63,8 @@ private final class DownloadRow: NSView {
         nameLabel.stringValue = item.filename
         switch item.state {
         case .inProgress: statusLabel.stringValue = "\(Int(item.fraction * 100))%"
-        case .completed: statusLabel.stringValue = "Готово"
-        case .failed: statusLabel.stringValue = "Помилка"
+        case .completed: statusLabel.stringValue = "Completed"
+        case .failed: statusLabel.stringValue = "Failed"
         }
         fill.layer?.backgroundColor = (item.state == .failed ? Theme.danger : Theme.accent).cgColor
         fillWidth.constant = trackWidth * CGFloat(item.state == .failed ? 1 : item.fraction)
@@ -76,17 +76,16 @@ private final class DownloadRow: NSView {
 /// краю вікна впритул, тож мають виглядати однією поверхнею, не карткою.
 final class DownloadsSidebarView: NSView {
     private let effect = NSVisualEffectView()
-    private let tint = NSView()
-    private let titleLabel = NSTextField(labelWithString: "Завантаження")
+    private let titleLabel = NSTextField(labelWithString: "Downloads")
     private let stack = NSStackView()
-    private let clearButton = NSButton(title: "Очистити", target: nil, action: nil)
-    private let emptyLabel = NSTextField(labelWithString: "Поки що порожньо")
+    private let clearButton = NSButton(title: "Clear", target: nil, action: nil)
+    private let emptyLabel = NSTextField(labelWithString: "Nothing here yet")
 
     init() {
         super.init(frame: .zero)
 
-        effect.material = .sidebar
-        effect.blendingMode = .behindWindow
+        effect.material = .hudWindow
+        effect.blendingMode = .withinWindow
         effect.state = .active
         effect.translatesAutoresizingMaskIntoConstraints = false
         addSubview(effect)
@@ -95,19 +94,6 @@ final class DownloadsSidebarView: NSView {
             effect.trailingAnchor.constraint(equalTo: trailingAnchor),
             effect.topAnchor.constraint(equalTo: topAnchor),
             effect.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-
-        // Той самий нейтралізуючий скрим, що й у лівому sidebar — інакше
-        // синюватий відтінок робочого столу конфліктує з чорною сторінкою.
-        tint.wantsLayer = true
-        tint.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.38).cgColor
-        tint.translatesAutoresizingMaskIntoConstraints = false
-        effect.addSubview(tint)
-        NSLayoutConstraint.activate([
-            tint.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
-            tint.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
-            tint.topAnchor.constraint(equalTo: effect.topAnchor),
-            tint.bottomAnchor.constraint(equalTo: effect.bottomAnchor),
         ])
 
         titleLabel.font = Theme.Typo.h2

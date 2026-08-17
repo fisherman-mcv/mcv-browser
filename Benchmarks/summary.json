@@ -1,0 +1,11 @@
+{
+  "pages": 10,
+  "coverageAccuracyMean": 73,
+  "extractLatencyMedianMs": 30,
+  "jsonValidityMean": 53,
+  "modelStabilityMean": 45,
+  "hallucinatedFields": 4,
+  "checkedFields": 4,
+  "modelLatencyMedianMs": 6532,
+  "modelLatencyP95Ms": 10848
+}
