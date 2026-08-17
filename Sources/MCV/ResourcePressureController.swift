@@ -1,5 +1,4 @@
 import AppKit
-import WebKit
 
 /// Event-driven resource policy. It has no polling timer, so the controller
 /// itself consumes no CPU while the machine and browser are idle.
@@ -7,6 +6,7 @@ final class ResourcePressureController {
     private weak var tabManager: TabManager?
     private var pressureSource: DispatchSourceMemoryPressure?
     private var observers: [NSObjectProtocol] = []
+    private var lastPressureResponse = Date.distantPast
 
     init(tabManager: TabManager) { self.tabManager = tabManager }
 
@@ -37,31 +37,34 @@ final class ResourcePressureController {
     }
 
     private func handleMemoryPressure(_ event: DispatchSource.MemoryPressureEvent) {
+        // Memory-pressure sources may deliver repeated events while macOS is
+        // compressing/swapping. Re-running teardown and cache work on every
+        // event creates worse foreground jank than the memory it saves.
+        guard Date().timeIntervalSince(lastPressureResponse) >= 30 else { return }
+        lastPressureResponse = Date()
         if event.contains(.critical) {
-            evictVolatileWebCache()
-            _ = tabManager?.hibernateBackgroundTabs(olderThan: 0)
-        } else if event.contains(.warning) {
+            purgeMCVCache()
             _ = tabManager?.hibernateBackgroundTabs(olderThan: 2 * 60)
+        } else if event.contains(.warning) {
+            _ = tabManager?.hibernateBackgroundTabs(olderThan: 10 * 60)
         }
     }
 
     private func adaptToSystemState() {
         let info = ProcessInfo.processInfo
         if info.thermalState == .critical {
-            evictVolatileWebCache()
-            _ = tabManager?.hibernateBackgroundTabs(olderThan: 60)
+            purgeMCVCache()
+            _ = tabManager?.hibernateBackgroundTabs(olderThan: 5 * 60)
         } else if info.thermalState == .serious || info.isLowPowerModeEnabled {
             _ = tabManager?.hibernateBackgroundTabs(olderThan: 5 * 60)
         }
     }
 
-    private func evictVolatileWebCache() {
+    private func purgeMCVCache() {
+        // WebKit owns its resource cache and already adapts it to system
+        // pressure. Clearing it here caused active pages to re-fetch and
+        // re-decode resources under the exact conditions where that is slow.
         BrowserTab.purgeVolatileCaches()
-        URLCache.shared.removeAllCachedResponses()
-        let store = WKWebsiteDataStore.default()
-        store.fetchDataRecords(ofTypes: [WKWebsiteDataTypeMemoryCache]) { records in
-            store.removeData(ofTypes: [WKWebsiteDataTypeMemoryCache], for: records) {}
-        }
     }
 
     deinit {
