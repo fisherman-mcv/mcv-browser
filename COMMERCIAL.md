@@ -19,6 +19,18 @@ product or service.
 Commercial pricing, support scope, deployment rights and term are defined in
 the commercial agreement. This file is an overview, not that agreement.
 
+Unless a written commercial agreement explicitly says otherwise, a commercial
+license permits internal use by the named customer only. It does **not** permit:
+
+- selling, sublicensing or redistributing MCV or a derivative browser;
+- offering a white-label or hosted version of MCV;
+- using MCV source to build a competing browser product;
+- removing notices to conceal the origin of the software;
+- using MCV names, icons or trade dress.
+
+OEM, redistribution and white-label rights require a separate negotiated grant.
+Payment for an ordinary Business seat does not quietly purchase the company.
+
 To request a license, open a licensing inquiry through the repository owner:
 https://github.com/fisherman-mcv
 

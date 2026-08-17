@@ -336,6 +336,12 @@ MCV is dual-licensed:
 - MCV Cloud AI is an optional subscription and is never required for ordinary
   browsing or local `gemma3:1b`.
 
+Source-visible does not mean resale-ready. Renaming MCV to `SuperBrowser` does
+not create the right to sell it: ordinary commercial licenses exclude resale,
+white-label distribution and competing browser products. Brand use is governed
+separately by [TRADEMARKS.md](TRADEMARKS.md), and code contributions use the
+[MCV Contributor Agreement](CONTRIBUTOR_AGREEMENT.md).
+
 The hosted inference boundary is documented in
 [`Docs/MCV_CLOUD_API.md`](Docs/MCV_CLOUD_API.md); no checkout is shown until the
 service, privacy terms and cancellation path actually exist.

@@ -3,10 +3,11 @@
 MCV optimizes for a smaller interface, lower idle work and explicit behavior.
 More code is not automatically more browser.
 
-MCV is dual-licensed. External code contributions are not accepted until a
-separate contributor agreement is published that preserves both the free
-noncommercial license and F Corp's ability to offer commercial licenses.
-Documentation, reproducible bug reports and benchmark evidence remain welcome.
+MCV is dual-licensed. External code contributions are welcome when the pull
+request explicitly accepts the [MCV Contributor Agreement](CONTRIBUTOR_AGREEMENT.md).
+That agreement preserves both the free noncommercial license and F Corp's
+ability to offer commercial licenses. Contributions without acceptance cannot
+be merged. Reproducible bug reports and benchmark evidence are always welcome.
 
 ## A useful change contains
 
