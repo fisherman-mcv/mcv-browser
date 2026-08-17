@@ -14,6 +14,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
     let window: NSWindow
     let tabManager = TabManager()
     var engine: CommandEngine?
+    var onSettingsRequest: (() -> Void)?
 
     private let tabBar = TabBarView()
     private let commandField = NSTextField()
@@ -279,6 +280,7 @@ final class BrowserWindowController: NSObject, BrowserControlling, NSTextFieldDe
         sidebarChrome.onUngroup = { [weak self] id in self?.tabManager.ungroup(id) }
         sidebarChrome.onSpotlight = { [weak self] in self?.showCommandPalette() }
         sidebarChrome.onNewTab = { [weak self] in self?.openNewTab() }
+        sidebarChrome.onSettings = { [weak self] in self?.onSettingsRequest?() }
         sidebarChrome.attachWindowControls(window)
 
         bookmarksSidebar.translatesAutoresizingMaskIntoConstraints = false

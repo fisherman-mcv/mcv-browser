@@ -308,6 +308,7 @@ final class SidebarChromeView: NSView {
     var onDuplicateTab: ((Int) -> Void)?
     var onNewTab: (() -> Void)?
     var onSpotlight: (() -> Void)?
+    var onSettings: (() -> Void)?
     var onMoveTab: ((Int, Int) -> Void)?
     var onGroupTabs: ((Int, Int) -> Void)?
     var onToggleGroup: ((UUID) -> Void)?
@@ -321,7 +322,11 @@ final class SidebarChromeView: NSView {
     private let scroll = NSScrollView()
     private let stack = FlippedStackView()
     private let spotlightButton = NSButton()
+    private let newTabButton = NSButton()
+    private let settingsButton = NSButton()
+    private let actionStack = NSStackView()
     private let addButton = NSButton()
+    private var actionsExpanded = false
     private let branding = CyberpunkBrandingView()
     private let closeDot = TrafficLightButton(dotColor: NSColor(hex: "#FF5F57"), glyph: "×")
     private let minimizeDot = TrafficLightButton(dotColor: NSColor(hex: "#FEBC2E"), glyph: "−")
@@ -362,29 +367,33 @@ final class SidebarChromeView: NSView {
         scroll.horizontalScrollElasticity = .none
         scroll.translatesAutoresizingMaskIntoConstraints = false
 
-        let plusConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
-        addButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "New Tab")?
-            .withSymbolConfiguration(plusConfig)
-        addButton.image?.isTemplate = true
-        addButton.contentTintColor = Theme.textSecondary
-        addButton.isBordered = false
-        addButton.title = ""
+        configureActionButton(addButton, symbol: "plus", description: "Actions")
         addButton.target = self
-        addButton.action = #selector(newTapped)
-        addButton.toolTip = "New Tab (⌘T)"
-        addButton.translatesAutoresizingMaskIntoConstraints = false
+        addButton.action = #selector(toggleActions)
+        addButton.toolTip = "Actions"
 
-        let spotlightConfig = NSImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        spotlightButton.image = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: "Spotlight")?
-            .withSymbolConfiguration(spotlightConfig)
-        spotlightButton.image?.isTemplate = true
-        spotlightButton.contentTintColor = Theme.textSecondary
-        spotlightButton.isBordered = false
-        spotlightButton.title = ""
+        configureActionButton(settingsButton, symbol: "gearshape", description: "Settings")
+        settingsButton.target = self
+        settingsButton.action = #selector(settingsTapped)
+        settingsButton.toolTip = "Settings (⌘,)"
+
+        configureActionButton(spotlightButton, symbol: "magnifyingglass", description: "Spotlight")
         spotlightButton.target = self
         spotlightButton.action = #selector(spotlightTapped)
         spotlightButton.toolTip = "Spotlight URL Bar (⌘E)"
-        spotlightButton.translatesAutoresizingMaskIntoConstraints = false
+
+        configureActionButton(newTabButton, symbol: "plus", description: "New Tab")
+        newTabButton.target = self
+        newTabButton.action = #selector(newTapped)
+        newTabButton.toolTip = "New Tab (⌘T)"
+
+        actionStack.orientation = .vertical
+        actionStack.spacing = Theme.Spacing.sm
+        actionStack.alignment = .centerX
+        actionStack.translatesAutoresizingMaskIntoConstraints = false
+        actionStack.alphaValue = 0
+        actionStack.isHidden = true
+        [settingsButton, spotlightButton, newTabButton].forEach(actionStack.addArrangedSubview)
 
         let trafficLights = NSStackView(views: [closeDot, minimizeDot, zoomDot])
         trafficLights.orientation = .vertical
@@ -395,20 +404,20 @@ final class SidebarChromeView: NSView {
         branding.translatesAutoresizingMaskIntoConstraints = false
         effect.addSubview(branding)
         effect.addSubview(scroll)
-        effect.addSubview(spotlightButton)
+        effect.addSubview(actionStack)
         effect.addSubview(addButton)
         NSLayoutConstraint.activate([
             trafficLights.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
             trafficLights.topAnchor.constraint(equalTo: effect.topAnchor, constant: 14),
             branding.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
-            branding.bottomAnchor.constraint(equalTo: spotlightButton.topAnchor, constant: -42),
+            branding.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -116),
             branding.widthAnchor.constraint(equalToConstant: 24),
             branding.heightAnchor.constraint(equalToConstant: 132),
 
             scroll.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
             scroll.topAnchor.constraint(equalTo: effect.topAnchor, constant: Self.trafficLightsReservedHeight),
-            scroll.bottomAnchor.constraint(equalTo: spotlightButton.topAnchor, constant: -Theme.Spacing.xs),
+            scroll.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.xs),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
             stack.topAnchor.constraint(equalTo: scroll.contentView.topAnchor, constant: Theme.Spacing.xs),
@@ -418,10 +427,8 @@ final class SidebarChromeView: NSView {
             addButton.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -Theme.Spacing.sm),
             addButton.widthAnchor.constraint(equalToConstant: 20),
             addButton.heightAnchor.constraint(equalToConstant: 20),
-            spotlightButton.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
-            spotlightButton.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.sm),
-            spotlightButton.widthAnchor.constraint(equalToConstant: 20),
-            spotlightButton.heightAnchor.constraint(equalToConstant: 20),
+            actionStack.centerXAnchor.constraint(equalTo: effect.centerXAnchor),
+            actionStack.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -Theme.Spacing.sm),
         ])
     }
 
@@ -473,8 +480,53 @@ final class SidebarChromeView: NSView {
         }
     }
 
-    @objc private func newTapped() { onNewTab?() }
-    @objc private func spotlightTapped() { onSpotlight?() }
+    private func configureActionButton(_ button: NSButton, symbol: String, description: String) {
+        let config = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: description)?
+            .withSymbolConfiguration(config)
+        button.image?.isTemplate = true
+        button.contentTintColor = Theme.textSecondary
+        button.isBordered = false
+        button.title = ""
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 20),
+            button.heightAnchor.constraint(equalToConstant: 20),
+        ])
+    }
+
+    @objc private func toggleActions() { setActionsExpanded(!actionsExpanded) }
+
+    private func setActionsExpanded(_ expanded: Bool) {
+        guard expanded != actionsExpanded else { return }
+        actionsExpanded = expanded
+        if expanded { actionStack.isHidden = false }
+
+        let reducedMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = reducedMotion ? 0 : 0.18
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            actionStack.animator().alphaValue = expanded ? 1 : 0
+            addButton.animator().frameCenterRotation = expanded ? 45 : 0
+        } completionHandler: { [weak self] in
+            guard let self, !self.actionsExpanded else { return }
+            self.actionStack.isHidden = true
+        }
+        addButton.toolTip = expanded ? "Close Actions" : "Actions"
+    }
+
+    @objc private func newTapped() {
+        setActionsExpanded(false)
+        onNewTab?()
+    }
+    @objc private func spotlightTapped() {
+        setActionsExpanded(false)
+        onSpotlight?()
+    }
+    @objc private func settingsTapped() {
+        setActionsExpanded(false)
+        onSettings?()
+    }
 }
 
 /// Bespoke 5×7 dot-matrix wordmark: Nothing-inspired geometry with sparse

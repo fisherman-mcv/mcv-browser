@@ -27,6 +27,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil)
 
         windowController = BrowserWindowController()
+        windowController.onSettingsRequest = { [weak self] in
+            self?.showSettings(selectExtensions: false)
+        }
         resourceController = ResourcePressureController(tabManager: windowController.tabManager)
         resourceController?.start()
         engine.browser = windowController
