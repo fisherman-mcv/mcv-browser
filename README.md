@@ -51,7 +51,7 @@ MCV is not trying to out-Safari Safari. Apple owns the engine, private APIs and 
 ## Build
 
 ```sh
-git clone <repository-url>
+git clone https://github.com/fisherman-mcv/mcv-browser.git
 cd mcv-browser
 make app
 open "MCV Browser.app"

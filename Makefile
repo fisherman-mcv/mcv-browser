@@ -1,7 +1,7 @@
 .PHONY: build run release app dmg clean
 
-UPDATE_FEED_URL ?= MCV_UPDATE_FEED_URL
-UPDATE_PUBLIC_KEY ?= MCV_UPDATE_PUBLIC_KEY
+UPDATE_FEED_URL ?= https://raw.githubusercontent.com/fisherman-mcv/mcv-browser/main/appcast.xml
+UPDATE_PUBLIC_KEY ?= PRvV5jR0eJT7ojMGKHKxaGWVgewRy6iJGKJZDdIlUW8=
 VERSION ?= 1.0.0
 BUILD_NUMBER ?= 1
 

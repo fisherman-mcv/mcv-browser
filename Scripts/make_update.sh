@@ -22,7 +22,11 @@ PUBLIC_KEY="$($SPARKLE_BIN/generate_keys --account mcv-browser -p)"
 make app VERSION="$VERSION" BUILD_NUMBER="$BUILD_NUMBER" \
   UPDATE_FEED_URL="$FEED_URL" UPDATE_PUBLIC_KEY="$PUBLIC_KEY"
 
+# Never let a stale local archive become the newest appcast item. The durable
+# history is the committed appcast and GitHub releases, not an ignored folder.
+rm -rf "$DIST"
 mkdir -p "$DIST"
+if [ -f appcast.xml ]; then cp appcast.xml "$DIST/appcast.xml"; fi
 ARCHIVE="MCV-Browser-${VERSION}.zip"
 rm -f "$DIST/$ARCHIVE"
 ditto -c -k --sequesterRsrc --keepParent "MCV Browser.app" "$DIST/$ARCHIVE"
